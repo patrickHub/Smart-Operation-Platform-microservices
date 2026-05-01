@@ -1,4 +1,4 @@
-package ch.smart.operations.platform.customer.api.errors;
+package ch.smart.operations.platform.app.global.exception;
 
 
 import org.springframework.http.HttpStatus;
@@ -8,9 +8,9 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import ch.smart.operations.platform.customer.api.contracts.ApiErrorResponse;
-import ch.smart.operations.platform.customer.application.exceptions.BusinessRuleException;
-import ch.smart.operations.platform.customer.application.exceptions.NotFoundException;
-import ch.smart.operations.platform.customer.application.exceptions.ValidationException;
+import ch.smart.operations.platform.shared.exceptions.BusinessRuleException;
+import ch.smart.operations.platform.shared.exceptions.NotFoundException;
+import ch.smart.operations.platform.shared.exceptions.ValidationException;
 import jakarta.servlet.http.HttpServletRequest;
 
 import org.springframework.http.converter.HttpMessageNotReadableException;

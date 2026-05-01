@@ -1,6 +1,5 @@
 package ch.smart.operations.platform.customer.api.contracts;
 
-import java.util.UUID;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;

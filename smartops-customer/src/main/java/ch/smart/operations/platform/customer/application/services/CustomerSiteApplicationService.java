@@ -8,13 +8,13 @@ import org.springframework.stereotype.Service;
 
 import ch.smart.operations.platform.customer.application.commands.CreateCustomerSiteCommand;
 import ch.smart.operations.platform.customer.application.dtos.CustomerSiteDto;
-import ch.smart.operations.platform.customer.application.exceptions.NotFoundException;
-import ch.smart.operations.platform.customer.application.exceptions.ValidationException;
 import ch.smart.operations.platform.customer.application.ports.CustomerRepository;
 import ch.smart.operations.platform.customer.application.ports.CustomerSiteRepository;
 import ch.smart.operations.platform.customer.domain.entities.Customer;
 import ch.smart.operations.platform.customer.domain.entities.CustomerSite;
 import ch.smart.operations.platform.customer.domain.enums.CustomerStatus;
+import ch.smart.operations.platform.shared.exceptions.NotFoundException;
+import ch.smart.operations.platform.shared.exceptions.ValidationException;
 
 @Service
 public class CustomerSiteApplicationService {

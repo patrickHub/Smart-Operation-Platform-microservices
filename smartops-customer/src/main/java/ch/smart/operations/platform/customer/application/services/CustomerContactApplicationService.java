@@ -2,8 +2,8 @@ package ch.smart.operations.platform.customer.application.services;
 
 import ch.smart.operations.platform.customer.application.commands.CreateCustomerContactCommand;
 import ch.smart.operations.platform.customer.application.dtos.CustomerContactDto;
-import ch.smart.operations.platform.customer.application.exceptions.NotFoundException;
-import ch.smart.operations.platform.customer.application.exceptions.ValidationException;
+import ch.smart.operations.platform.shared.exceptions.NotFoundException;
+import ch.smart.operations.platform.shared.exceptions.ValidationException;
 import ch.smart.operations.platform.customer.application.ports.CustomerContactRepository;
 import ch.smart.operations.platform.customer.application.ports.CustomerRepository;
 import ch.smart.operations.platform.customer.domain.entities.Customer;

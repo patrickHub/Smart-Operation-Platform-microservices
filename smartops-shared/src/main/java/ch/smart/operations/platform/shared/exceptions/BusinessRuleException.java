@@ -1,4 +1,4 @@
-package ch.smart.operations.platform.customer.application.exceptions;
+package ch.smart.operations.platform.shared.exceptions;
 
 public class BusinessRuleException extends RuntimeException {
     public BusinessRuleException(String message) {

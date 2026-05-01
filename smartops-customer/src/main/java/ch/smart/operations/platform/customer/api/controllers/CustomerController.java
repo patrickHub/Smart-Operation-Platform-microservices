@@ -47,7 +47,7 @@ public class CustomerController {
     }
 
     @PostMapping
-    public ResponseEntity<Map<String,UUID>> createCustome(@Valid @RequestBody CreateCustomerRequest request) {
+    public ResponseEntity<Map<String,UUID>> createCustomer(@Valid @RequestBody CreateCustomerRequest request) {
 
         UUID id = customerApplicationService.createCustomer(
             new CreateCustomerCommand(request.legalName(),

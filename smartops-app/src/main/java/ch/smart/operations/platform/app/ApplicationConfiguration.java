@@ -12,9 +12,4 @@ public class ApplicationConfiguration {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ApplicationConfiguration.class);
 
-
-    @Bean
-    public ObjectMapper objectMapper() { 
-    return new ObjectMapper();
-    }
 }

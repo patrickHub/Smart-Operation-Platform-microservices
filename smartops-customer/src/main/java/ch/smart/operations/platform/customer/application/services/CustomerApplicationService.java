@@ -9,10 +9,10 @@ import org.springframework.stereotype.Service;
 
 import ch.smart.operations.platform.customer.application.commands.CreateCustomerCommand;
 import ch.smart.operations.platform.customer.application.dtos.CustomerDto;
-import ch.smart.operations.platform.customer.application.exceptions.NotFoundException;
-import ch.smart.operations.platform.customer.application.exceptions.ValidationException;
 import ch.smart.operations.platform.customer.application.ports.CustomerRepository;
 import ch.smart.operations.platform.customer.domain.entities.Customer;
+import ch.smart.operations.platform.shared.exceptions.NotFoundException;
+import ch.smart.operations.platform.shared.exceptions.ValidationException;
 
 
 @Service

@@ -19,4 +19,4 @@ CREATE TABLE customer.customer_sites (
 
 ALTER TABLE customer.customer_sites
 ADD CONSTRAINT fk_customer_sites_customer
-FOREIGN KEY (customer_id) REFERENCES customer.customers(id);s
+FOREIGN KEY (customer_id) REFERENCES customer.customers(id);
