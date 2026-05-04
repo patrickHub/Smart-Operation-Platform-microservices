@@ -92,7 +92,7 @@ public class Asset {
                 warrantyEndDate,
                 AssetStatus.ACTIVE,
                 criticality,
-                0L,
+                null,
                 now,
                 createdBy,
                 now,
