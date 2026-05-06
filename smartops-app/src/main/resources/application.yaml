@@ -12,11 +12,24 @@ spring:
     properties:
       hibernate:
         format_sql: true
-
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      client-id: smartops-platform
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
   flyway:
     enabled: true
     locations: classpath:db/migration
-
+smartops:
+  outbox:
+    enabled: true
+    polling-rate-ms: 5000
+    max-attempts: 5
+  kafka:
+    topics:
+      workorder-events: smartops.workorder.events
+      billing-events: smartops.billing.events
 server:
   port: 8080
 

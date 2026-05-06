@@ -57,6 +57,51 @@ public class OutboxEvent {
         );
     }
 
+    public OutboxEvent published() {
+        return new OutboxEvent(
+                id,
+                aggregateType,
+                aggregateId,
+                eventType,
+                eventPayload,
+                eventKey,
+                OutboxEventStatus.PUBLISHED,
+                occurredAt,
+                OffsetDateTime.now(),
+                retryCount
+        );
+    }
+
+    public OutboxEvent failed() {
+        return new OutboxEvent(
+                id,
+                aggregateType,
+                aggregateId,
+                eventType,
+                eventPayload,
+                eventKey,
+                OutboxEventStatus.FAILED,
+                occurredAt,
+                publishedAt,
+                retryCount + 1
+        );
+    }
+
+    public OutboxEvent retryPending() {
+        return new OutboxEvent(
+                id,
+                aggregateType,
+                aggregateId,
+                eventType,
+                eventPayload,
+                eventKey,
+                OutboxEventStatus.PENDING,
+                occurredAt,
+                publishedAt,
+                retryCount + 1
+        );
+    }
+
     public UUID getId() { return id; }
     public String getAggregateType() { return aggregateType; }
     public UUID getAggregateId() { return aggregateId; }

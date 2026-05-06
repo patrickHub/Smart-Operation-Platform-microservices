@@ -57,6 +57,51 @@ public class BillingOutboxEvent {
         );
     }
 
+    public BillingOutboxEvent published() {
+        return new BillingOutboxEvent(
+                id,
+                aggregateType,
+                aggregateId,
+                eventType,
+                eventPayload,
+                eventKey,
+                BillingOutboxEventStatus.PUBLISHED,
+                occurredAt,
+                OffsetDateTime.now(),
+                retryCount
+        );
+    }
+
+    public BillingOutboxEvent failed() {
+        return new BillingOutboxEvent(
+                id,
+                aggregateType,
+                aggregateId,
+                eventType,
+                eventPayload,
+                eventKey,
+                BillingOutboxEventStatus.FAILED,
+                occurredAt,
+                publishedAt,
+                retryCount + 1
+        );
+    }
+
+    public BillingOutboxEvent retryPending() {
+        return new BillingOutboxEvent(
+                id,
+                aggregateType,
+                aggregateId,
+                eventType,
+                eventPayload,
+                eventKey,
+                BillingOutboxEventStatus.PENDING,
+                occurredAt,
+                publishedAt,
+                retryCount + 1
+        );
+    }
+
     public UUID getId() {
         return id;
     }
