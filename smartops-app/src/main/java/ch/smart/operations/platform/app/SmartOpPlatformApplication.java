@@ -12,13 +12,15 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 	"ch.smart.operations.platform.customer.infrastructure.persistence.repositories",
 	"ch.smart.operations.platform.asset.infrastructure.persistence.repositories",
 	"ch.smart.operations.platform.workorder.infrastructure.persistence.repositories",
-	"ch.smart.operations.platform.billing.infrastructure.persistence.repositories"
+	"ch.smart.operations.platform.billing.infrastructure.persistence.repositories",
+	"ch.smart.operations.platform.notification.infrastructure.persistence.repositories"
 })
 @EntityScan(basePackages = {
 	"ch.smart.operations.platform.customer.infrastructure.persistence.entities",
 	"ch.smart.operations.platform.asset.infrastructure.persistence.entities",
 	"ch.smart.operations.platform.workorder.infrastructure.persistence.entities",
-	"ch.smart.operations.platform.billing.infrastructure.persistence.entities"
+	"ch.smart.operations.platform.billing.infrastructure.persistence.entities",
+	"ch.smart.operations.platform.notification.infrastructure.persistence.entities"
 })
 public class SmartOpPlatformApplication {
 

@@ -35,7 +35,7 @@ public class BillingOutboxEventPublisher {
         this.enabled = enabled;
     }
 
-    @Scheduled(fixedDelayString = "${smartops.outbox.polling-rate-ms:5000}")
+    @Scheduled(fixedDelayString = "${smartops.outbox.polling-rate-ms:600000}")
     @Transactional
     public void publishPendingEvents() {
         if (!enabled) {
