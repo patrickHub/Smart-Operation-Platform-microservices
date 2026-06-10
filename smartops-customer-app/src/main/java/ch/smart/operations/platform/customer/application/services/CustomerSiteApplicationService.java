@@ -46,6 +46,12 @@ public class CustomerSiteApplicationService {
                 .orElseThrow(() -> new NotFoundException("Customer site not found with id: " + id));
     }
 
+    public CustomerSiteDto getCustomerSiteByCustomerIdAndSiteId(UUID customerId, UUID siteId) {
+        return customerSiteRepository.foundByCustomerIdAndSiteId(customerId, siteId)
+                .map(this::toDto)
+                .orElseThrow(() -> new NotFoundException("Customer site not found with customer id: " + customerId + " and site id: " + siteId));
+    }
+
     public UUID createCustomerSite(CreateCustomerSiteCommand  command) {
         validate(command);
         CustomerSite customerSite = CustomerSite.create(

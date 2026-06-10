@@ -12,5 +12,6 @@ public interface CustomerSiteRepository {
     List<CustomerSite> findAllByCustomerId(UUID customerId);
     Optional<CustomerSite> findById(UUID id);
     CustomerSite save(CustomerSite customerSite);
+    Optional<CustomerSite> foundByCustomerIdAndSiteId(UUID customerId, UUID siteId);
 
 }

@@ -53,6 +53,12 @@ public class CustomerSiteRepositoryAdapter implements CustomerSiteRepository {
         return toDomain(saved);
     }
 
+    @Override
+    public Optional<CustomerSite> foundByCustomerIdAndSiteId(UUID customerId, UUID siteId) {
+        return customerSiteJpaRepository.foundByCustomerIdAndSiteId(customerId, siteId)
+                .map(this::toDomain);
+    }
+
     private CustomerSite toDomain(CustomerSiteJpaEntity entity) {
         
         CustomerSite customerSite = new CustomerSite(

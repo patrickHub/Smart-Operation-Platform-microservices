@@ -1,6 +1,7 @@
 package ch.smart.operations.platform.customer.infrastructure.persistence.repositories;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -15,4 +16,10 @@ public interface CustomerSiteJpaRepository extends JpaRepository<CustomerSiteJpa
         where c.customerId = :customerId
     """)
     List<CustomerSiteJpaEntity> findAllByCustomerId(UUID customerId);
+
+    @Query("""
+        select c from CustomerSiteJpaEntity c
+        where c.customerId = :customerId and c.id = :siteId
+    """)
+    Optional<CustomerSiteJpaEntity> foundByCustomerIdAndSiteId(UUID customerId, UUID siteId);
 }
