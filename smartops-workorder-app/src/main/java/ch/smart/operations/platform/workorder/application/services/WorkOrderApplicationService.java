@@ -12,7 +12,9 @@ import ch.smart.operations.platform.workorder.application.commands.TechnicianAct
 import ch.smart.operations.platform.workorder.application.dtos.AssetSummaryDto;
 import ch.smart.operations.platform.workorder.application.dtos.InterventionReportDto;
 import ch.smart.operations.platform.workorder.application.dtos.UsedPartDto;
+import ch.smart.operations.platform.workorder.application.dtos.UsedPartForBillingDto;
 import ch.smart.operations.platform.workorder.application.dtos.WorkOrderAssignmentDto;
+import ch.smart.operations.platform.workorder.application.dtos.WorkOrderBillingSummaryDto;
 import ch.smart.operations.platform.workorder.application.dtos.WorkOrderDto;
 import ch.smart.operations.platform.workorder.application.dtos.WorkOrderTaskDto;
 import ch.smart.operations.platform.workorder.application.ports.AssetReferencePort;
@@ -149,6 +151,44 @@ public class WorkOrderApplicationService {
         }
 
         return workOrderRepository.findAll().stream().map(this::toDto).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public WorkOrderBillingSummaryDto getBillingSummary(UUID workOrderId) {
+        WorkOrder workOrder = workOrderRepository.findById(workOrderId)
+                .orElseThrow(() -> new NotFoundException("Work order not found with id " + workOrderId));
+
+        if (workOrder.getStatus() != WorkOrderStatus.COMPLETED) {
+            throw new BusinessRuleException("Billing summary is only available for COMPLETED work orders.");
+        }
+
+        InterventionReport report = interventionReportRepository.findByWorkOrderId(workOrderId)
+                .orElseThrow(() -> new NotFoundException("Intervention report not found for work order " + workOrderId));
+
+        List<UsedPartForBillingDto> usedParts = usedPartRepository.findByInterventionReportId(report.getId())
+                .stream()
+                .map(part -> new UsedPartForBillingDto(
+                        part.getPartNumber(),
+                        part.getPartName(),
+                        part.getQuantity(),
+                        part.getUnitPrice(),
+                        part.getCurrency()
+                ))
+                .toList();
+
+        return new WorkOrderBillingSummaryDto(
+                workOrder.getId(),
+                workOrder.getWorkOrderNumber(),
+                workOrder.getCustomerId(),
+                workOrder.getAssetId(),
+                workOrder.getSiteId(),
+                workOrder.getType().name(),
+                workOrder.getStatus().name(),
+                workOrder.getCompletedAt(),
+                report.getLaborDurationMinutes(),
+                report.getResultStatus().name(),
+                usedParts
+        );
     }
 
     public void assignTechnician(AssignTechnicianCommand command) {

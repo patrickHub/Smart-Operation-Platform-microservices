@@ -41,6 +41,7 @@
 		<module>smartops-customer-app</module>
 		<module>smartops-asset-app</module>
 		<module>smartops-workorder-app</module>
+		<module>smartops-billing-app</module>
 
 	</modules>
 	<properties>
