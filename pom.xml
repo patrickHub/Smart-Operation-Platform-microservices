@@ -40,6 +40,7 @@
 		<module>smartops-app</module>
 		<module>smartops-customer-app</module>
 		<module>smartops-asset-app</module>
+		<module>smartops-workorder-app</module>
 
 	</modules>
 	<properties>
