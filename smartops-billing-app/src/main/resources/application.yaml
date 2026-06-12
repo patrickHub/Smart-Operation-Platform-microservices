@@ -33,7 +33,7 @@ smartops:
 
   kafka:
     topics:
-      workorder-events: smartops.billing.events
+      billing-events: smartops.billing.events
 server:
   port: 8084
 
