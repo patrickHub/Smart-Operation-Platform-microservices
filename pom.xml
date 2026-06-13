@@ -35,6 +35,7 @@
 		<module>smartops-workorder-app</module>
 		<module>smartops-billing-app</module>
 		<module>smartops-notification-app</module>
+		<module>smartops-gateway-app</module>
 
 	</modules>
 	<properties>

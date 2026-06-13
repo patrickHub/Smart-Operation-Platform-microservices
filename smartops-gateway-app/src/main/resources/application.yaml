@@ -1,0 +1,45 @@
+spring:
+  application:
+    name: smartops-gateway-app
+
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: customer-service
+              uri: ${SMARTOPS_CUSTOMER_SERVICE_URL:http://localhost:8081}
+              predicates:
+                - Path=/api/v1/customers/**,/internal/v1/customers/**
+
+            - id: asset-service
+              uri: ${SMARTOPS_ASSET_SERVICE_URL:http://localhost:8082}
+              predicates:
+                - Path=/api/v1/assets/**,/api/v1/asset-types/**,/internal/v1/assets/**
+
+            - id: workorder-service
+              uri: ${SMARTOPS_WORKORDER_SERVICE_URL:http://localhost:8083}
+              predicates:
+                - Path=/api/v1/work-orders/**,/internal/v1/work-orders/**
+
+            - id: billing-service
+              uri: ${SMARTOPS_BILLING_SERVICE_URL:http://localhost:8084}
+              predicates:
+                - Path=/api/v1/invoices/**,/internal/v1/invoices/**,/api/v1/pricing-policies/**
+
+            - id: notification-service
+              uri: ${SMARTOPS_NOTIFICATION_SERVICE_URL:http://localhost:8085}
+              predicates:
+                - Path=/api/v1/notifications/**
+server:
+  port: 8085
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway
+
+logging:
+  level:
+    org.springframework.cloud.gateway: INFO
