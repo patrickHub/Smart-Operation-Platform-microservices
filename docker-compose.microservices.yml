@@ -10,7 +10,6 @@ services:
       - "5432:5432"
     volumes:
       - smartops-postgres-data:/var/lib/postgresql/data
-      - ./docker/postgres/init:/docker-entrypoint-initdb.d
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U smartops -d smartops"]
       interval: 10s
@@ -70,10 +69,22 @@ services:
         condition: service_healthy
     environment:
       SERVER_PORT: 8081
+      
       SPRING_DATASOURCE_URL: jdbc:postgresql://smartops-postgres:5432/smartops
       SPRING_DATASOURCE_USERNAME: smartops
       SPRING_DATASOURCE_PASSWORD: smartops
-      SPRING_FLYWAY_ENABLED: "false"
+
+      SPRING_FLYWAY_ENABLED: "true"
+      SPRING_FLYWAY_LOCATIONS: classpath:db/migration
+      SPRING_FLYWAY_SCHEMAS: customer
+      SPRING_FLYWAY_DEFAULT_SCHEMA: customer
+      SPRING_FLYWAY_CREATE_SCHEMAS: "true"
+      SPRING_FLYWAY_TABLE: flyway_schema_history
+
+      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+      SPRING_JPA_PROPERTIES_HIBERNATE_DEFAULT_SCHEMA: customer
+      SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: "true"
+      SPRING_JPA_SHOW_SQL: "true"
     ports:
       - "8081:8081"
     networks:
@@ -93,10 +104,23 @@ services:
         condition: service_started
     environment:
       SERVER_PORT: 8082
+
       SPRING_DATASOURCE_URL: jdbc:postgresql://smartops-postgres:5432/smartops
       SPRING_DATASOURCE_USERNAME: smartops
       SPRING_DATASOURCE_PASSWORD: smartops
-      SPRING_FLYWAY_ENABLED: "false"
+
+      SPRING_FLYWAY_ENABLED: "true"
+      SPRING_FLYWAY_SCHEMAS: asset
+      SPRING_FLYWAY_DEFAULT_SCHEMA: asset
+      SPRING_FLYWAY_CREATE_SCHEMAS: "true"
+      SPRING_FLYWAY_TABLE: flyway_schema_history
+      SPRING_FLYWAY_LOCATIONS: classpath:db/migration
+
+      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+      SPRING_JPA_PROPERTIES_HIBERNATE_DEFAULT_SCHEMA: asset
+      SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: "true"
+      SPRING_JPA_SHOW_SQL: "true"
+      
       SMARTOPS_SERVICES_CUSTOMER_BASE_URL: http://customer-service:8081
     ports:
       - "8082:8082"
@@ -119,10 +143,22 @@ services:
         condition: service_started
     environment:
       SERVER_PORT: 8083
+
       SPRING_DATASOURCE_URL: jdbc:postgresql://smartops-postgres:5432/smartops
       SPRING_DATASOURCE_USERNAME: smartops
       SPRING_DATASOURCE_PASSWORD: smartops
-      SPRING_FLYWAY_ENABLED: "false"
+
+      SPRING_FLYWAY_ENABLED: "true"
+      SPRING_FLYWAY_SCHEMAS: workorder
+      SPRING_FLYWAY_DEFAULT_SCHEMA: workorder
+      SPRING_FLYWAY_CREATE_SCHEMAS: "true"
+      SPRING_FLYWAY_TABLE: flyway_schema_history
+      SPRING_FLYWAY_LOCATIONS: classpath:db/migration
+
+      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+      SPRING_JPA_PROPERTIES_HIBERNATE_DEFAULT_SCHEMA: workorder
+      SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: "true"
+      SPRING_JPA_SHOW_SQL: "true"
 
       SPRING_KAFKA_BOOTSTRAP_SERVERS: smartops-kafka:29092
       SMARTOPS_SERVICES_ASSET_BASE_URL: http://asset-service:8082
@@ -151,10 +187,22 @@ services:
         condition: service_started
     environment:
       SERVER_PORT: 8084
+
       SPRING_DATASOURCE_URL: jdbc:postgresql://smartops-postgres:5432/smartops
       SPRING_DATASOURCE_USERNAME: smartops
       SPRING_DATASOURCE_PASSWORD: smartops
-      SPRING_FLYWAY_ENABLED: "false"
+
+      SPRING_FLYWAY_ENABLED: "true"
+      SPRING_FLYWAY_SCHEMAS: billing
+      SPRING_FLYWAY_DEFAULT_SCHEMA: billing
+      SPRING_FLYWAY_CREATE_SCHEMAS: "true"
+      SPRING_FLYWAY_TABLE: flyway_schema_history
+      SPRING_FLYWAY_LOCATIONS: classpath:db/migration
+
+      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+      SPRING_JPA_PROPERTIES_HIBERNATE_DEFAULT_SCHEMA: billing
+      SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: "true"
+      SPRING_JPA_SHOW_SQL: "true"
 
       SPRING_KAFKA_BOOTSTRAP_SERVERS: smartops-kafka:29092
       SMARTOPS_SERVICES_WORKORDER_BASE_URL: http://workorder-service:8083
@@ -181,10 +229,22 @@ services:
         condition: service_healthy
     environment:
       SERVER_PORT: 8085
+
       SPRING_DATASOURCE_URL: jdbc:postgresql://smartops-postgres:5432/smartops
       SPRING_DATASOURCE_USERNAME: smartops
       SPRING_DATASOURCE_PASSWORD: smartops
-      SPRING_FLYWAY_ENABLED: "false"
+
+      SPRING_FLYWAY_ENABLED: "true"
+      SPRING_FLYWAY_SCHEMAS: notification
+      SPRING_FLYWAY_DEFAULT_SCHEMA: notification
+      SPRING_FLYWAY_CREATE_SCHEMAS: "true"
+      SPRING_FLYWAY_TABLE: flyway_schema_history
+      SPRING_FLYWAY_LOCATIONS: classpath:db/migration
+
+      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+      SPRING_JPA_PROPERTIES_HIBERNATE_DEFAULT_SCHEMA: notification
+      SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: "true"
+      SPRING_JPA_SHOW_SQL: "true"
 
       SPRING_KAFKA_BOOTSTRAP_SERVERS: smartops-kafka:29092
       SPRING_KAFKA_CONSUMER_GROUP_ID: smartops-notification-service

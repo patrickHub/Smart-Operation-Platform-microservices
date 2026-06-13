@@ -6,6 +6,9 @@ import jakarta.persistence.*;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 @Entity
 @Table(name = "outbox_events", schema = "workorder")
 public class OutboxEventJpaEntity {
@@ -22,7 +25,8 @@ public class OutboxEventJpaEntity {
     @Column(name = "event_type", nullable = false)
     private String eventType;
 
-    @Column(name = "event_payload", nullable = false, columnDefinition = "TEXT")
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "event_payload", nullable = false, columnDefinition = "jsonb")
     private String eventPayload;
 
     @Column(name = "event_key", nullable = false)
