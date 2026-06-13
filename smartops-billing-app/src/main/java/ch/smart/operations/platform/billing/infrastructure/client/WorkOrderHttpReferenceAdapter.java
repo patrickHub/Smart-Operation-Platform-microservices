@@ -67,7 +67,7 @@ public class WorkOrderHttpReferenceAdapter implements WorkOrderReferencePort {
                                 .toList()
             ));
         } catch (RestClientResponseException ex) {
-            if (ex.getStatusCode().value() == 404) {
+            if (ex.getStatusCode().value() == 404 || ex.getStatusCode().value() == 409) {
                 return Optional.empty();
             }
             logger.error(

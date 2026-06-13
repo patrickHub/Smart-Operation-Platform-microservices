@@ -1,0 +1,206 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: smartops-postgres
+    environment:
+      POSTGRES_DB: smartops
+      POSTGRES_USER: smartops
+      POSTGRES_PASSWORD: smartops
+    ports:
+      - "5432:5432"
+    volumes:
+      - smartops-postgres-data:/var/lib/postgresql/data
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U smartops -d smartops"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - smartops-network
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.1
+    container_name: smartops-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    networks:
+      - smartops-network
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.1
+    container_name: smartops-kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: smartops-zookeeper:2181
+
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:29092,PLAINTEXT_HOST://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://smartops-kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-broker-api-versions --bootstrap-server smartops-kafka:29092 >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+    networks:
+      - smartops-network
+
+  customer-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.microservices
+      args:
+        MODULE: smartops-customer-app
+    container_name: smartops-customer-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SERVER_PORT: 8081
+      SPRING_DATASOURCE_URL: jdbc:postgresql://smartops-postgres:5432/smartops
+      SPRING_DATASOURCE_USERNAME: smartops
+      SPRING_DATASOURCE_PASSWORD: smartops
+      SPRING_FLYWAY_ENABLED: "false"
+    ports:
+      - "8081:8081"
+    networks:
+      - smartops-network
+
+  asset-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.microservices
+      args:
+        MODULE: smartops-asset-app
+    container_name: smartops-asset-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      customer-service:
+        condition: service_started
+    environment:
+      SERVER_PORT: 8082
+      SPRING_DATASOURCE_URL: jdbc:postgresql://smartops-postgres:5432/smartops
+      SPRING_DATASOURCE_USERNAME: smartops
+      SPRING_DATASOURCE_PASSWORD: smartops
+      SPRING_FLYWAY_ENABLED: "false"
+      SMARTOPS_SERVICES_CUSTOMER_BASE_URL: http://customer-service:8081
+    ports:
+      - "8082:8082"
+    networks:
+      - smartops-network
+
+  workorder-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.microservices
+      args:
+        MODULE: smartops-workorder-app
+    container_name: smartops-workorder-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      asset-service:
+        condition: service_started
+    environment:
+      SERVER_PORT: 8083
+      SPRING_DATASOURCE_URL: jdbc:postgresql://smartops-postgres:5432/smartops
+      SPRING_DATASOURCE_USERNAME: smartops
+      SPRING_DATASOURCE_PASSWORD: smartops
+      SPRING_FLYWAY_ENABLED: "false"
+
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: smartops-kafka:29092
+      SMARTOPS_SERVICES_ASSET_BASE_URL: http://asset-service:8082
+      SMARTOPS_OUTBOX_ENABLED: "true"
+      SMARTOPS_OUTBOX_POLLING_RATE_MS: 5000
+      SMARTOPS_OUTBOX_MAX_ATTEMPTS: 5
+      SMARTOPS_KAFKA_TOPICS_WORKORDER_EVENTS: smartops.workorder.events
+    ports:
+      - "8083:8083"
+    networks:
+      - smartops-network
+
+  billing-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.microservices
+      args:
+        MODULE: smartops-billing-app
+    container_name: smartops-billing-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      workorder-service:
+        condition: service_started
+    environment:
+      SERVER_PORT: 8084
+      SPRING_DATASOURCE_URL: jdbc:postgresql://smartops-postgres:5432/smartops
+      SPRING_DATASOURCE_USERNAME: smartops
+      SPRING_DATASOURCE_PASSWORD: smartops
+      SPRING_FLYWAY_ENABLED: "false"
+
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: smartops-kafka:29092
+      SMARTOPS_SERVICES_WORKORDER_BASE_URL: http://workorder-service:8083
+      SMARTOPS_OUTBOX_ENABLED: "true"
+      SMARTOPS_OUTBOX_POLLING_RATE_MS: 5000
+      SMARTOPS_OUTBOX_MAX_ATTEMPTS: 5
+      SMARTOPS_KAFKA_TOPICS_BILLING_EVENTS: smartops.billing.events
+    ports:
+      - "8084:8084"
+    networks:
+      - smartops-network
+
+  notification-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.microservices
+      args:
+        MODULE: smartops-notification-app
+    container_name: smartops-notification-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      SERVER_PORT: 8085
+      SPRING_DATASOURCE_URL: jdbc:postgresql://smartops-postgres:5432/smartops
+      SPRING_DATASOURCE_USERNAME: smartops
+      SPRING_DATASOURCE_PASSWORD: smartops
+      SPRING_FLYWAY_ENABLED: "false"
+
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: smartops-kafka:29092
+      SPRING_KAFKA_CONSUMER_GROUP_ID: smartops-notification-service
+      SPRING_KAFKA_CONSUMER_AUTO_OFFSET_RESET: earliest
+
+      SMARTOPS_KAFKA_CONSUMER_NOTIFICATION_GROUP: smartops-notification-service
+      SMARTOPS_KAFKA_TOPICS_WORKORDER_EVENTS: smartops.workorder.events
+      SMARTOPS_KAFKA_TOPICS_BILLING_EVENTS: smartops.billing.events
+    ports:
+      - "8085:8085"
+    networks:
+      - smartops-network
+
+volumes:
+  smartops-postgres-data:
+
+networks:
+  smartops-network:
+    driver: bridge
