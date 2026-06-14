@@ -20,8 +20,30 @@ spring:
     properties:
       hibernate:
         default_schema: asset
+
 server:
   port: 8082
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      customerService:
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+        ignoreExceptions:
+          - ch.smart.operations.platform.shared.exceptions.DownstreamClientException
+  timelimiter:
+    instances:
+      customerService:
+        timeoutDuration: 2s
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,circuitbreakers,circuitbreakerevents
 
 logging:
   level:

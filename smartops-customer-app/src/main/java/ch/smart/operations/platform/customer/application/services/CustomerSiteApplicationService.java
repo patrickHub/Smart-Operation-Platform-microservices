@@ -4,8 +4,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import ch.smart.operations.platform.customer.api.controllers.CustomerSiteController;
 import ch.smart.operations.platform.customer.application.commands.CreateCustomerSiteCommand;
 import ch.smart.operations.platform.customer.application.dtos.CustomerSiteDto;
 import ch.smart.operations.platform.customer.application.ports.CustomerRepository;
@@ -21,6 +24,7 @@ public class CustomerSiteApplicationService {
 
     private final CustomerSiteRepository customerSiteRepository;
     private final CustomerRepository customerRepository;
+    private final Logger logger = LoggerFactory.getLogger(CustomerSiteApplicationService.class);
 
     public CustomerSiteApplicationService(CustomerSiteRepository customerSiteRepository, CustomerRepository
          customerRepository) {
@@ -54,6 +58,7 @@ public class CustomerSiteApplicationService {
 
     public UUID createCustomerSite(CreateCustomerSiteCommand  command) {
         validate(command);
+
         CustomerSite customerSite = CustomerSite.create(
             generateSiteNumber(),
             command.customerId(),
@@ -67,6 +72,7 @@ public class CustomerSiteApplicationService {
             command.timezone(),
             command.accessInstructions()
         );
+
         CustomerSite saved = customerSiteRepository.save(customerSite);
         return saved.getId();
     }

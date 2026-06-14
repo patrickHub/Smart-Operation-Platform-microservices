@@ -7,39 +7,163 @@ spring:
       server:
         webflux:
           routes:
-            - id: customer-service
+            # CUSTOMER - writes without circuit breaker
+            - id: customer-service-write
               uri: ${SMARTOPS_CUSTOMER_SERVICE_URL:http://localhost:8081}
               predicates:
-                - Path=/api/v1/customers/**,/internal/v1/customers/**
+                - Path=/api/v1/customers/**, /api/v1/sites/**, /api/v1/contacts/**
+                - Method=GET,POST,PUT,PATCH,DELETE
 
-            - id: asset-service
+            # CUSTOMER - reads with circuit breaker
+            - id: customer-service-read
+              uri: ${SMARTOPS_CUSTOMER_SERVICE_URL:http://localhost:8081}
+              predicates:
+                - Path=/internal/v1/customers/**
+                - Method=GET
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: customerServiceCircuitBreaker
+                    fallbackUri: forward:/fallback/customers
+
+            # ASSET - writes without circuit breaker
+            - id: asset-service-write
+              uri: ${SMARTOPS_ASSET_SERVICE_URL:http://localhost:8082}
+              predicates:
+                - Path=/api/v1/assets/**,/api/v1/asset-types/**
+                - Method=POST,PUT,PATCH,DELETE
+
+            # ASSET - reads with circuit breaker
+            - id: asset-service-read
               uri: ${SMARTOPS_ASSET_SERVICE_URL:http://localhost:8082}
               predicates:
                 - Path=/api/v1/assets/**,/api/v1/asset-types/**,/internal/v1/assets/**
+                - Method=GET
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: assetServiceCircuitBreaker
+                    fallbackUri: forward:/fallback/assets
 
-            - id: workorder-service
+            # WORKORDER - writes without circuit breaker
+            - id: workorder-service-write
+              uri: ${SMARTOPS_WORKORDER_SERVICE_URL:http://localhost:8083}
+              predicates:
+                - Path=/api/v1/work-orders/**
+                - Method=POST,PUT,PATCH,DELETE
+
+            # WORKORDER - reads with circuit breaker
+            - id: workorder-service-read
               uri: ${SMARTOPS_WORKORDER_SERVICE_URL:http://localhost:8083}
               predicates:
                 - Path=/api/v1/work-orders/**,/internal/v1/work-orders/**
+                - Method=GET
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: workorderServiceCircuitBreaker
+                    fallbackUri: forward:/fallback/workorders
 
-            - id: billing-service
+            # BILLING - writes without circuit breaker
+            - id: billing-service-write
+              uri: ${SMARTOPS_BILLING_SERVICE_URL:http://localhost:8084}
+              predicates:
+                - Path=/api/v1/invoices/**,/api/v1/pricing-policies/**
+                - Method=POST,PUT,PATCH,DELETE
+
+            # BILLING - reads with circuit breaker
+            - id: billing-service-read
               uri: ${SMARTOPS_BILLING_SERVICE_URL:http://localhost:8084}
               predicates:
                 - Path=/api/v1/invoices/**,/internal/v1/invoices/**,/api/v1/pricing-policies/**
+                - Method=GET
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: billingServiceCircuitBreaker
+                    fallbackUri: forward:/fallback/billing
 
-            - id: notification-service
+            # NOTIFICATION - writes without circuit breaker
+            - id: notification-service-write
               uri: ${SMARTOPS_NOTIFICATION_SERVICE_URL:http://localhost:8085}
               predicates:
                 - Path=/api/v1/notifications/**
+                - Method=POST,PUT,PATCH,DELETE
+
+            # NOTIFICATION - reads with circuit breaker
+            - id: notification-service-read
+              uri: ${SMARTOPS_NOTIFICATION_SERVICE_URL:http://localhost:8085}
+              predicates:
+                - Path=/api/v1/notifications/**
+                - Method=GET
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: notificationServiceCircuitBreaker
+                    fallbackUri: forward:/fallback/notifications
+
 server:
-  port: 8085
+  port: 8080
 
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,gateway
+        include: health,info,gateway,circuitbreakers,circuitbreakerevents
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      customerServiceCircuitBreaker:
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+
+      assetServiceCircuitBreaker:
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+
+      workorderServiceCircuitBreaker:
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+
+      billingServiceCircuitBreaker:
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+
+      notificationServiceCircuitBreaker:
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+
+  timelimiter:
+    instances:
+      customerServiceCircuitBreaker:
+        timeoutDuration: 5s
+      assetServiceCircuitBreaker:
+        timeoutDuration: 5s
+      workorderServiceCircuitBreaker:
+        timeoutDuration: 5s
+      billingServiceCircuitBreaker:
+        timeoutDuration: 5s
+      notificationServiceCircuitBreaker:
+        timeoutDuration: 5s
 
 logging:
   level:
+    root: INFO
     org.springframework.cloud.gateway: INFO
+    io.github.resilience4j: INFO
