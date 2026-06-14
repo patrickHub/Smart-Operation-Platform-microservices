@@ -3,10 +3,13 @@ package ch.smart.operations.platform.billing.infrastructure.client;
 import ch.smart.operations.platform.billing.application.dtos.UsedPartBillingDto;
 import ch.smart.operations.platform.billing.application.dtos.WorkOrderBillingSummaryDto;
 import ch.smart.operations.platform.billing.application.ports.WorkOrderReferencePort;
+import ch.smart.operations.platform.shared.exceptions.DownstreamClientException;
+import ch.smart.operations.platform.shared.exceptions.DownstreamServiceUnavailableException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.client.circuitbreaker.CircuitBreakerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientResponseException;
@@ -21,28 +24,39 @@ public class WorkOrderHttpReferenceAdapter implements WorkOrderReferencePort {
 
     private final Logger logger = LoggerFactory.getLogger(WorkOrderHttpReferenceAdapter.class);
     private final RestClient restClient;
+    private final CircuitBreakerFactory<?,?> circuitBreakerFactory;
 
     public WorkOrderHttpReferenceAdapter(RestClient.Builder restClientBuilder,
-        @Value("${smartops.services.workorder.base-url:http://localhost:8083}") String workorderServiceBaseUrl
+        @Value("${smartops.services.workorder.base-url:http://localhost:8083}") String workorderServiceBaseUrl,
+        CircuitBreakerFactory<?,?> circuitBreakerFactory
     ){
         this.restClient = restClientBuilder
             .baseUrl(workorderServiceBaseUrl)
             .build();
+        this.circuitBreakerFactory = circuitBreakerFactory;
 
     }
 
     @Override
     public Optional<WorkOrderBillingSummaryDto> findBillingSummary(UUID workOrderId) {
-        try {
-           
-            WorkOrderBillingSummaryResponse response = restClient.get()
-                .uri("/internal/v1/work-orders/{workOrderId}/billing-summary", workOrderId)
-                .retrieve()
-                .body(WorkOrderBillingSummaryResponse.class);
+        return circuitBreakerFactory.create("workorderService")
+                .run(
+                        () -> retrieveBillingSummary(workOrderId),
+                        throwable -> handleWorkOrderServiceFallback(workOrderId, throwable)
+                );
+    }
 
-            if(response == null){
+    private Optional<WorkOrderBillingSummaryDto> retrieveBillingSummary(UUID workOrderId) {
+        try {
+            WorkOrderBillingSummaryResponse response = restClient.get()
+                    .uri("/internal/v1/work-orders/{workOrderId}/billing-summary", workOrderId)
+                    .retrieve()
+                    .body(WorkOrderBillingSummaryResponse.class);
+
+            if (response == null) {
                 return Optional.empty();
             }
+
             return Optional.of(new WorkOrderBillingSummaryDto(
                     response.id(),
                     response.workOrderNumber(),
@@ -55,21 +69,35 @@ public class WorkOrderHttpReferenceAdapter implements WorkOrderReferencePort {
                     response.laborDurationMinutes(),
                     response.resultStatus(),
                     response.usedParts() == null ? List.of() :
-                            response.usedParts
-                                .stream()
-                                .map(part -> new UsedPartBillingDto(
-                                        part.partNumber(),
-                                        part.partName(),
-                                        part.quantity(),
-                                        part.unitPrice(),
-                                        part.currency()
-                                ))
-                                .toList()
+                            response.usedParts()
+                                    .stream()
+                                    .map(part -> new UsedPartBillingDto(
+                                            part.partNumber(),
+                                            part.partName(),
+                                            part.quantity(),
+                                            part.unitPrice(),
+                                            part.currency()
+                                    ))
+                                    .toList()
             ));
+
         } catch (RestClientResponseException ex) {
             if (ex.getStatusCode().value() == 404 || ex.getStatusCode().value() == 409) {
                 return Optional.empty();
             }
+
+            if (ex.getStatusCode().is4xxClientError()) {
+                throw new DownstreamClientException(
+                        "workorder-service",
+                        ex.getStatusCode(),
+                        ex.getResponseBodyAsString()
+                );
+            }
+
+            if (ex.getStatusCode().is5xxServerError()) {
+                throw new DownstreamServiceUnavailableException("workorder-service", ex);
+            }
+
             logger.error(
                     "Failed to retrieve work order billing summary from WorkOrder Service for workOrderId={}",
                     workOrderId,
@@ -78,6 +106,23 @@ public class WorkOrderHttpReferenceAdapter implements WorkOrderReferencePort {
 
             throw ex;
         }
+    }
+
+    private Optional<WorkOrderBillingSummaryDto> handleWorkOrderServiceFallback(
+            UUID workOrderId,
+            Throwable throwable
+    ) {
+        if (throwable instanceof DownstreamClientException downstreamClientException) {
+            throw downstreamClientException;
+        }
+
+        logger.error(
+                "WorkOrder Service is unavailable while retrieving billing summary for workOrderId={}",
+                workOrderId,
+                throwable
+        );
+
+        throw new DownstreamServiceUnavailableException("workorder-service", throwable);
     }
 
     private record WorkOrderBillingSummaryResponse(
@@ -103,8 +148,5 @@ public class WorkOrderHttpReferenceAdapter implements WorkOrderReferencePort {
             String currency
     ) {
     }
-
-
-
 
 }

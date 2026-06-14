@@ -68,14 +68,14 @@ spring:
             - id: billing-service-write
               uri: ${SMARTOPS_BILLING_SERVICE_URL:http://localhost:8084}
               predicates:
-                - Path=/api/v1/invoices/**,/api/v1/pricing-policies/**
+                - Path=/api/v1/invoices/**,/internal/v1/invoices/**
                 - Method=POST,PUT,PATCH,DELETE
 
             # BILLING - reads with circuit breaker
             - id: billing-service-read
               uri: ${SMARTOPS_BILLING_SERVICE_URL:http://localhost:8084}
               predicates:
-                - Path=/api/v1/invoices/**,/internal/v1/invoices/**,/api/v1/pricing-policies/**
+                - Path=/api/v1/invoices/**,/internal/v1/invoices/**
                 - Method=GET
               filters:
                 - name: CircuitBreaker
