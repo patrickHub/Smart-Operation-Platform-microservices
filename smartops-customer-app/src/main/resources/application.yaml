@@ -22,7 +22,11 @@ spring:
         default_schema: customer
 server:
   port: 8081
-
+smartops:
+  security:
+    jwt:
+      issuer: smartops-identity
+      secret: ${SMARTOPS_JWT_SECRET:local-dev-secret-change-me-local-dev-secret-change-me}
 logging:
   level:
     root: INFO

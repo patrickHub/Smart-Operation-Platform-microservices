@@ -38,6 +38,10 @@ smartops:
   kafka:
     consumer:
       notification-group: smartops-notification-app
+  security:
+    jwt:
+      issuer: smartops-identity
+      secret: ${SMARTOPS_JWT_SECRET:local-dev-secret-change-me-local-dev-secret-change-me}
 
     topics:
       workorder-events: smartops.workorder.events

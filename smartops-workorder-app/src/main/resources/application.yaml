@@ -31,6 +31,10 @@ smartops:
   services:
     asset:
       base-url: http://localhost:8082
+  security:
+    jwt:
+      issuer: smartops-identity
+      secret: ${SMARTOPS_JWT_SECRET:local-dev-secret-change-me-local-dev-secret-change-me}
 
   outbox:
     enabled: true

@@ -85,6 +85,9 @@ services:
       SPRING_JPA_PROPERTIES_HIBERNATE_DEFAULT_SCHEMA: customer
       SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: "true"
       SPRING_JPA_SHOW_SQL: "true"
+
+      SMARTOPS_SECURITY_JWT_SECRET: local-dev-secret-change-me-local-dev-secret-change-me
+      SMARTOPS_SECURITY_JWT_ISSUER: smartops-identity
     ports:
       - "8081:8081"
     networks:
@@ -120,6 +123,9 @@ services:
       SPRING_JPA_PROPERTIES_HIBERNATE_DEFAULT_SCHEMA: asset
       SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: "true"
       SPRING_JPA_SHOW_SQL: "true"
+
+      SMARTOPS_SECURITY_JWT_SECRET: local-dev-secret-change-me-local-dev-secret-change-me
+      SMARTOPS_SECURITY_JWT_ISSUER: smartops-identity
       
       SMARTOPS_SERVICES_CUSTOMER_BASE_URL: http://customer-service:8081
     ports:
@@ -159,6 +165,9 @@ services:
       SPRING_JPA_PROPERTIES_HIBERNATE_DEFAULT_SCHEMA: workorder
       SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: "true"
       SPRING_JPA_SHOW_SQL: "true"
+
+      SMARTOPS_SECURITY_JWT_SECRET: local-dev-secret-change-me-local-dev-secret-change-me
+      SMARTOPS_SECURITY_JWT_ISSUER: smartops-identity
 
       SPRING_KAFKA_BOOTSTRAP_SERVERS: smartops-kafka:29092
       SMARTOPS_SERVICES_ASSET_BASE_URL: http://asset-service:8082
@@ -204,6 +213,9 @@ services:
       SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: "true"
       SPRING_JPA_SHOW_SQL: "true"
 
+      SMARTOPS_SECURITY_JWT_SECRET: local-dev-secret-change-me-local-dev-secret-change-me
+      SMARTOPS_SECURITY_JWT_ISSUER: smartops-identity
+
       SPRING_KAFKA_BOOTSTRAP_SERVERS: smartops-kafka:29092
       SMARTOPS_SERVICES_WORKORDER_BASE_URL: http://workorder-service:8083
       SMARTOPS_OUTBOX_ENABLED: "true"
@@ -245,6 +257,9 @@ services:
       SPRING_JPA_PROPERTIES_HIBERNATE_DEFAULT_SCHEMA: notification
       SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: "true"
       SPRING_JPA_SHOW_SQL: "true"
+
+      SMARTOPS_SECURITY_JWT_SECRET: local-dev-secret-change-me-local-dev-secret-change-me
+      SMARTOPS_SECURITY_JWT_ISSUER: smartops-identity
 
       SPRING_KAFKA_BOOTSTRAP_SERVERS: smartops-kafka:29092
       SPRING_KAFKA_CONSUMER_GROUP_ID: smartops-notification-service
