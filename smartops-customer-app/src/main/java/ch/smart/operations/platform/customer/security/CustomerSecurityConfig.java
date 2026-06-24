@@ -44,6 +44,8 @@ public class CustomerSecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/customers/**")
                         .hasAnyRole("ADMIN", "SUPPORT_AGENT", "DISPATCHER", "BILLING_MANAGER")
 
+                        .requestMatchers("/internal/v1/**").hasAnyRole("SERVICE", "ADMIN")
+
                         // For now: internal endpoints require authentication.
                         // Later we will replace this with service-to-service tokens.
                         .requestMatchers("/internal/v1/**")

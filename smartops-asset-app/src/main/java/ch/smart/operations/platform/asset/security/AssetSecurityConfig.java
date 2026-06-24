@@ -41,6 +41,8 @@ public class AssetSecurityConfig {
 
                 .requestMatchers(HttpMethod.GET, "/api/v1/assets/**", "/api/v1/asset-types/**")
                 .hasAnyRole("ADMIN", "SUPPORT_AGENT", "DISPATCHER", "TECHNICIAN", "BILLING_MANAGER")
+                
+                .requestMatchers("/internal/v1/**").hasAnyRole("SERVICE", "ADMIN")
 
                 .anyRequest().authenticated()
                 )

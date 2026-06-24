@@ -51,6 +51,8 @@ public class WorkOrderSecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/work-orders/**")
                         .hasAnyRole("ADMIN", "SUPPORT_AGENT", "DISPATCHER", "TECHNICIAN", "BILLING_MANAGER")
 
+                        .requestMatchers("/internal/v1/**").hasAnyRole("SERVICE", "ADMIN")
+
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2

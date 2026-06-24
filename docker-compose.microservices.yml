@@ -126,6 +126,8 @@ services:
 
       SMARTOPS_SECURITY_JWT_SECRET: local-dev-secret-change-me-local-dev-secret-change-me
       SMARTOPS_SECURITY_JWT_ISSUER: smartops-identity
+      SMARTOPS_SECURITY_INTERNAL_SERVICE_NAME: asset-service
+      SMARTOPS_SECURITY_INTERNAL_TOKEN_VALIDITY_SECONDS: 300
       
       SMARTOPS_SERVICES_CUSTOMER_BASE_URL: http://customer-service:8081
     ports:
@@ -168,6 +170,8 @@ services:
 
       SMARTOPS_SECURITY_JWT_SECRET: local-dev-secret-change-me-local-dev-secret-change-me
       SMARTOPS_SECURITY_JWT_ISSUER: smartops-identity
+      SMARTOPS_SECURITY_INTERNAL_SERVICE_NAME: workorder-service
+      SMARTOPS_SECURITY_INTERNAL_TOKEN_VALIDITY_SECONDS: 300
 
       SPRING_KAFKA_BOOTSTRAP_SERVERS: smartops-kafka:29092
       SMARTOPS_SERVICES_ASSET_BASE_URL: http://asset-service:8082
@@ -215,6 +219,8 @@ services:
 
       SMARTOPS_SECURITY_JWT_SECRET: local-dev-secret-change-me-local-dev-secret-change-me
       SMARTOPS_SECURITY_JWT_ISSUER: smartops-identity
+      SMARTOPS_SECURITY_INTERNAL_SERVICE_NAME: billing-service
+      SMARTOPS_SECURITY_INTERNAL_TOKEN_VALIDITY_SECONDS: 300
 
       SPRING_KAFKA_BOOTSTRAP_SERVERS: smartops-kafka:29092
       SMARTOPS_SERVICES_WORKORDER_BASE_URL: http://workorder-service:8083

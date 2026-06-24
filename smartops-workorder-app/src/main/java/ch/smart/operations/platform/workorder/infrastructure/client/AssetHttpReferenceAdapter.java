@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.client.circuitbreaker.CircuitBreakerFactory;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -15,6 +16,7 @@ import org.springframework.web.client.RestClientResponseException;
 
 import ch.smart.operations.platform.shared.exceptions.DownstreamClientException;
 import ch.smart.operations.platform.shared.exceptions.DownstreamServiceUnavailableException;
+import ch.smart.operations.platform.shared.security.InternalServiceTokenProvider;
 import ch.smart.operations.platform.workorder.application.dtos.AssetSummaryDto;
 import ch.smart.operations.platform.workorder.application.ports.AssetReferencePort;
 
@@ -24,16 +26,19 @@ public class AssetHttpReferenceAdapter implements AssetReferencePort {
     private static final Logger logger = LoggerFactory.getLogger(AssetHttpReferenceAdapter.class);
     private final RestClient restClient;
     private final CircuitBreakerFactory<?, ?> circuitBreakerFactory;
+    private final InternalServiceTokenProvider internalServiceTokenProvider;
 
 
     public AssetHttpReferenceAdapter(RestClient.Builder restClientBuilder,
         @Value("${smartops.services.asset.base-url:http://localhost:8082}") String assetServiceBaseUrl,
-        CircuitBreakerFactory<?, ?> circuitBreakerFactory
+        CircuitBreakerFactory<?, ?> circuitBreakerFactory,
+        InternalServiceTokenProvider internalServiceTokenProvider
     ) {
         this.restClient = restClientBuilder
                 .baseUrl(assetServiceBaseUrl)
                 .build();
         this.circuitBreakerFactory = circuitBreakerFactory;
+        this.internalServiceTokenProvider = internalServiceTokenProvider;
 
     }
 
@@ -50,6 +55,7 @@ public class AssetHttpReferenceAdapter implements AssetReferencePort {
         try {
             AssetSummaryResponse response = restClient.get()
                     .uri("/internal/v1/assets/{assetId}/summary", assetId)
+                    .header(HttpHeaders.AUTHORIZATION, internalServiceTokenProvider.authorizationHeader())
                     .retrieve()
                     .body(AssetSummaryResponse.class);
 

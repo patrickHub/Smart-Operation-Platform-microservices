@@ -5,16 +5,17 @@ import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.client.circuitbreaker.CircuitBreakerFactory;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
-import org.springframework.web.client.RestClientResponseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ch.smart.operations.platform.asset.application.ports.CustomerReferencePort;
 import ch.smart.operations.platform.shared.exceptions.DownstreamClientException;
 import ch.smart.operations.platform.shared.exceptions.DownstreamServiceUnavailableException;
+import ch.smart.operations.platform.shared.security.InternalServiceTokenProvider;
 
 @Component
 public class CustomerHttpReferenceAdapter implements CustomerReferencePort {
@@ -23,16 +24,19 @@ public class CustomerHttpReferenceAdapter implements CustomerReferencePort {
 
     private final RestClient restClient;
     private final CircuitBreakerFactory<?,?> circuitBreakerFactory;
+    private final InternalServiceTokenProvider internalServiceTokenProvider;
 
     public CustomerHttpReferenceAdapter(
             RestClient.Builder restClientBuilder,
             @Value("${smartops.services.customer.base-url:http://localhost:8081}") String customerServiceBaseUrl,
-            CircuitBreakerFactory<?,?> circuitBreakerFactory
+            CircuitBreakerFactory<?,?> circuitBreakerFactory,
+            InternalServiceTokenProvider internalServiceTokenProvider
     ) {
         this.restClient = restClientBuilder
                 .baseUrl(customerServiceBaseUrl)
                 .build();
         this.circuitBreakerFactory = circuitBreakerFactory;
+        this.internalServiceTokenProvider = internalServiceTokenProvider;
     }
 
 
@@ -43,6 +47,7 @@ public class CustomerHttpReferenceAdapter implements CustomerReferencePort {
                     () -> {
                         restClient.get()
                                 .uri("/internal/v1/customers/{customerId}/exists", customerId)
+                                .header(HttpHeaders.AUTHORIZATION, internalServiceTokenProvider.authorizationHeader())
                                 .retrieve()
                                 .onStatus(HttpStatusCode::is4xxClientError, (request, response) -> {
                                     String body = new String(
@@ -75,6 +80,7 @@ public class CustomerHttpReferenceAdapter implements CustomerReferencePort {
                     () -> {
                         restClient.get()
                                 .uri("/internal/v1/customers/{customerId}/sites/{siteId}/exists", customerId, siteId)
+                                .header(HttpHeaders.AUTHORIZATION, internalServiceTokenProvider.authorizationHeader())
                                 .retrieve()
                                 .onStatus(HttpStatusCode::is4xxClientError, (request, response) -> {
                                     String body = new String(

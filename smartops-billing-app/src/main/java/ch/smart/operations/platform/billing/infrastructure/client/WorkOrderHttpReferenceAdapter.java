@@ -5,11 +5,13 @@ import ch.smart.operations.platform.billing.application.dtos.WorkOrderBillingSum
 import ch.smart.operations.platform.billing.application.ports.WorkOrderReferencePort;
 import ch.smart.operations.platform.shared.exceptions.DownstreamClientException;
 import ch.smart.operations.platform.shared.exceptions.DownstreamServiceUnavailableException;
+import ch.smart.operations.platform.shared.security.InternalServiceTokenProvider;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.client.circuitbreaker.CircuitBreakerFactory;
+import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientResponseException;
@@ -25,15 +27,18 @@ public class WorkOrderHttpReferenceAdapter implements WorkOrderReferencePort {
     private final Logger logger = LoggerFactory.getLogger(WorkOrderHttpReferenceAdapter.class);
     private final RestClient restClient;
     private final CircuitBreakerFactory<?,?> circuitBreakerFactory;
+    private final InternalServiceTokenProvider internalServiceTokenProvider;
 
     public WorkOrderHttpReferenceAdapter(RestClient.Builder restClientBuilder,
         @Value("${smartops.services.workorder.base-url:http://localhost:8083}") String workorderServiceBaseUrl,
-        CircuitBreakerFactory<?,?> circuitBreakerFactory
+        CircuitBreakerFactory<?,?> circuitBreakerFactory,
+        InternalServiceTokenProvider internalServiceTokenProvider
     ){
         this.restClient = restClientBuilder
             .baseUrl(workorderServiceBaseUrl)
             .build();
         this.circuitBreakerFactory = circuitBreakerFactory;
+        this.internalServiceTokenProvider = internalServiceTokenProvider;
 
     }
 
@@ -50,6 +55,7 @@ public class WorkOrderHttpReferenceAdapter implements WorkOrderReferencePort {
         try {
             WorkOrderBillingSummaryResponse response = restClient.get()
                     .uri("/internal/v1/work-orders/{workOrderId}/billing-summary", workOrderId)
+                    .header(HttpHeaders.AUTHORIZATION, internalServiceTokenProvider.authorizationHeader())
                     .retrieve()
                     .body(WorkOrderBillingSummaryResponse.class);
 
