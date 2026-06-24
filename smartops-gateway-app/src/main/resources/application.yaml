@@ -6,7 +6,30 @@ spring:
     gateway:
       server:
         webflux:
+          globalcors:
+            add-to-simple-url-handler-mapping: true
+            cors-configurations:
+              '[/**]':
+                allowedOrigins:
+                  - "http://localhost:4200"
+                allowedMethods:
+                  - GET
+                  - POST
+                  - PUT
+                  - PATCH
+                  - DELETE
+                  - OPTIONS
+                allowedHeaders:
+                  - "*"
+                exposedHeaders:
+                  - "Location"
+                allowCredentials: true
           routes:
+            # IDENTITY
+            - id: identity-service
+              uri: ${SMARTOPS_IDENTITY_SERVICE_URL:http://localhost:8086}
+              predicates:
+                - Path=/api/v1/auth/**
             # CUSTOMER - writes without circuit breaker
             - id: customer-service-write
               uri: ${SMARTOPS_CUSTOMER_SERVICE_URL:http://localhost:8081}

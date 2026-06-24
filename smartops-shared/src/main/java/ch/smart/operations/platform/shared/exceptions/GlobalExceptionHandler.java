@@ -10,6 +10,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
 
 import ch.smart.operations.platform.shared.api.contracts.ApiErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
@@ -143,17 +144,32 @@ public class GlobalExceptionHandler {
         );
     }
 
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiErrorResponse> handleException(
-            Exception ex,
-            HttpServletRequest request
-    ) {
-        log.error("Unhandled exception while processing {} {}", request.getMethod(), request.getRequestURI(), ex);
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+    @ExceptionHandler(ResponseStatusException.class)
+        public ResponseEntity<ApiErrorResponse> handleResponseStatusException(
+                ResponseStatusException ex,
+                HttpServletRequest request
+        ) {
+        int statusCode = ex.getStatusCode().value();
+
+        String title = switch (statusCode) {
+                case 400 -> "Bad Request";
+                case 401 -> "Unauthorized";
+                case 403 -> "Forbidden";
+                case 404 -> "Resource not found";
+                case 409 -> "Conflict";
+                case 415 -> "Unsupported Media Type";
+                default -> "Request failed";
+        };
+
+        String detail = ex.getReason() != null
+                ? ex.getReason()
+                : "The request could not be processed.";
+
+        return ResponseEntity.status(ex.getStatusCode()).body(
                 new ApiErrorResponse(
-                        "Internal Server Error",
-                        500,
-                        "An unexpected error occurred.",
+                        title,
+                        statusCode,
+                        detail,
                         null,
                         request.getRequestURI()
                 )
@@ -190,5 +206,22 @@ public class GlobalExceptionHandler {
             .header("Content-Type", "application/json")
             .body(ex.getResponseBody());
    }
+
+   @ExceptionHandler(Exception.class)
+    public ResponseEntity<ApiErrorResponse> handleException(
+            Exception ex,
+            HttpServletRequest request
+    ) {
+        log.error("Unhandled exception while processing {} {}", request.getMethod(), request.getRequestURI(), ex);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+                new ApiErrorResponse(
+                        "Internal Server Error",
+                        500,
+                        "An unexpected error occurred.",
+                        null,
+                        request.getRequestURI()
+                )
+        );
+    }
 
 }
