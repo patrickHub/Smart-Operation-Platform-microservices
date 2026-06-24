@@ -185,6 +185,12 @@ resilience4j:
       notificationServiceCircuitBreaker:
         timeoutDuration: 5s
 
+smartops:
+  security:
+    jwt:
+      issuer: smartops-identity
+      secret: ${SMARTOPS_JWT_SECRET:local-dev-secret-change-me-local-dev-secret-change-me} # We should keep issuer & secret the same as identity-service, because the gateway should validate tokens signed by identiy-service.
+
 logging:
   level:
     root: INFO

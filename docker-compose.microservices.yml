@@ -322,6 +322,8 @@ services:
       SMARTOPS_WORKORDER_SERVICE_URL: http://workorder-service:8083
       SMARTOPS_BILLING_SERVICE_URL: http://billing-service:8084
       SMARTOPS_NOTIFICATION_SERVICE_URL: http://notification-service:8085
+      SMARTOPS_SECURITY_JWT_SECRET: local-dev-secret-change-me-local-dev-secret-change-me # We should keep issuer & secret the same as identity-service, because the gateway should validate tokens signed by identiy-service.
+      SMARTOPS_SECURITY_JWT_ISSUER: smartops-identity
     ports:
       - "8080:8080"
     networks:
