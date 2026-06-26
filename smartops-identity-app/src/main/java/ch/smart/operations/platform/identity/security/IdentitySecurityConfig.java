@@ -33,9 +33,16 @@ public class IdentitySecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
-                        .requestMatchers("/actuator/health", "/api/v1/auth/users").permitAll()
-                       // .requestMatchers(HttpMethod.POST, "/api/v1/auth/users").hasRole("ADMIN")
+                        .requestMatchers("/actuator/health").permitAll()
                         .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+                        .requestMatchers(
+                                "/swagger-ui.html",
+                                "/swagger-ui/**",
+                                "/v3/api-docs",
+                                "/v3/api-docs/**",
+                                "/webjars/**"
+                        ).permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/users").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
                 .build();

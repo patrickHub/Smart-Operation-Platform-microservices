@@ -5,7 +5,7 @@ spring:
     url: jdbc:postgresql://localhost:5432/smartops
     username: smartops
     password: smartops
-  lyway:
+  flyway:
     enabled: true
     locations: classpath:db/migration
     schemas: asset

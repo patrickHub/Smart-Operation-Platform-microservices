@@ -31,6 +31,13 @@ public class CustomerSecurityConfig {
 
                         .requestMatchers(HttpMethod.POST, "/api/v1/customers")
                         .hasAnyRole("ADMIN", "SUPPORT_AGENT")
+                        .requestMatchers(
+                                "/swagger-ui.html",
+                                "/swagger-ui/**",
+                                "/v3/api-docs",
+                                "/v3/api-docs/**",
+                                "/webjars/**"
+                        ).permitAll()
 
                         .requestMatchers(HttpMethod.PUT, "/api/v1/customers/**")
                         .hasAnyRole("ADMIN", "SUPPORT_AGENT")

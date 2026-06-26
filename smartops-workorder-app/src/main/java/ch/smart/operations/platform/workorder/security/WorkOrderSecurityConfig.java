@@ -29,6 +29,13 @@ public class WorkOrderSecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                         .requestMatchers("/internal/v1/**").permitAll()
+                        .requestMatchers(
+                                "/swagger-ui.html",
+                                "/swagger-ui/**",
+                                "/v3/api-docs",
+                                "/v3/api-docs/**",
+                                "/webjars/**"
+                        ).permitAll()
 
                         .requestMatchers(HttpMethod.POST, "/api/v1/work-orders")
                         .hasAnyRole("ADMIN", "SUPPORT_AGENT")

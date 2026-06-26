@@ -30,6 +30,14 @@ public class BillingSecurityConfig {
                         .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                         .requestMatchers("/internal/v1/**").permitAll()
 
+                        .requestMatchers(
+                                "/swagger-ui.html",
+                                "/swagger-ui/**",
+                                "/v3/api-docs",
+                                "/v3/api-docs/**",
+                                "/webjars/**"
+                        ).permitAll()
+
                         .requestMatchers(HttpMethod.GET, "/api/v1/invoices/**")
                         .hasAnyRole("ADMIN", "BILLING_MANAGER")
 

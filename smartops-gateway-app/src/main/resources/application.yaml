@@ -25,6 +25,49 @@ spring:
                   - "Location"
                 allowCredentials: true
           routes:
+            # route identity OpenAPI spec through the gateway
+            - id: identity-openapi
+              uri: ${SMARTOPS_IDENTITY_SERVICE_URL:http://localhost:8086}
+              predicates:
+                - Path=/v3/api-docs/identity
+              filters:
+                - SetPath=/v3/api-docs
+            # route customer OpenAPI spec through the gateway
+            - id: customer-openapi
+              uri: ${SMARTOPS_CUSTOMER_SERVICE_URL:http://localhost:8081}
+              predicates:
+                - Path=/v3/api-docs/customers
+              filters:
+                - SetPath=/v3/api-docs
+            # route asset OpenAPI spec through the gateway
+            - id: asset-openapi
+              uri: ${SMARTOPS_ASSET_SERVICE_URL:http://localhost:8082}
+              predicates:
+                - Path=/v3/api-docs/assets
+              filters:
+                - SetPath=/v3/api-docs
+            # route workorder OpenAPI spec through the gateway
+            - id: workorder-openapi
+              uri: ${SMARTOPS_WORKORDER_SERVICE_URL:http://localhost:8083}
+              predicates:
+                - Path=/v3/api-docs/workorders
+              filters:
+                - SetPath=/v3/api-docs
+            # route billing OpenAPI spec through the gateway
+            - id: billing-openapi
+              uri: ${SMARTOPS_BILLING_SERVICE_URL:http://localhost:8084}
+              predicates:
+                - Path=/v3/api-docs/billing
+              filters:
+                - SetPath=/v3/api-docs
+            # route notification OpenAPI spec through the gateway
+            - id: notification-openapi
+              uri: ${SMARTOPS_NOTIFICATION_SERVICE_URL:http://localhost:8085}
+              predicates:
+                - Path=/v3/api-docs/notifications
+              filters:
+                - SetPath=/v3/api-docs
+
             # IDENTITY
             - id: identity-service
               uri: ${SMARTOPS_IDENTITY_SERVICE_URL:http://localhost:8086}
@@ -196,3 +239,20 @@ logging:
     root: INFO
     org.springframework.cloud.gateway: INFO
     io.github.resilience4j: INFO
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    urls:
+      - name: Identity Service
+        url: /v3/api-docs/identity
+      - name: Customer Service
+        url: /v3/api-docs/customers
+      - name: Asset Service
+        url: /v3/api-docs/assets
+      - name: WorkOrder Service
+        url: /v3/api-docs/workorders
+      - name: Billing Service
+        url: /v3/api-docs/billing
+      - name: Notification Service
+        url: /v3/api-docs/notifications
