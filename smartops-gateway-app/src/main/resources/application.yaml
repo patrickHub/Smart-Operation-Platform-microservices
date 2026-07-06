@@ -1,0 +1,263 @@
+spring:
+  application:
+    name: smartops-gateway-app
+
+  cloud:
+    gateway:
+      server:
+        webflux:
+          globalcors:
+            add-to-simple-url-handler-mapping: true
+            cors-configurations:
+              '[/**]':
+                allowedOrigins:
+                  - "http://localhost:4200"
+                allowedMethods:
+                  - GET
+                  - POST
+                  - PUT
+                  - PATCH
+                  - DELETE
+                  - OPTIONS
+                allowedHeaders:
+                  - Authorization
+                  - Content-Type
+                  - Accept
+                  - Origin
+                  - X-Requested-With
+                exposedHeaders:
+                  - Location
+                  - Authorization
+                allowCredentials: true
+          routes:
+            # route identity OpenAPI spec through the gateway
+            - id: identity-openapi
+              uri: ${SMARTOPS_IDENTITY_SERVICE_URL:http://localhost:8086}
+              predicates:
+                - Path=/v3/api-docs/identity
+              filters:
+                - SetPath=/v3/api-docs
+            # route customer OpenAPI spec through the gateway
+            - id: customer-openapi
+              uri: ${SMARTOPS_CUSTOMER_SERVICE_URL:http://localhost:8081}
+              predicates:
+                - Path=/v3/api-docs/customers
+              filters:
+                - SetPath=/v3/api-docs
+            # route asset OpenAPI spec through the gateway
+            - id: asset-openapi
+              uri: ${SMARTOPS_ASSET_SERVICE_URL:http://localhost:8082}
+              predicates:
+                - Path=/v3/api-docs/assets
+              filters:
+                - SetPath=/v3/api-docs
+            # route workorder OpenAPI spec through the gateway
+            - id: workorder-openapi
+              uri: ${SMARTOPS_WORKORDER_SERVICE_URL:http://localhost:8083}
+              predicates:
+                - Path=/v3/api-docs/workorders
+              filters:
+                - SetPath=/v3/api-docs
+            # route billing OpenAPI spec through the gateway
+            - id: billing-openapi
+              uri: ${SMARTOPS_BILLING_SERVICE_URL:http://localhost:8084}
+              predicates:
+                - Path=/v3/api-docs/billing
+              filters:
+                - SetPath=/v3/api-docs
+            # route notification OpenAPI spec through the gateway
+            - id: notification-openapi
+              uri: ${SMARTOPS_NOTIFICATION_SERVICE_URL:http://localhost:8085}
+              predicates:
+                - Path=/v3/api-docs/notifications
+              filters:
+                - SetPath=/v3/api-docs
+
+            # IDENTITY
+            - id: identity-service
+              uri: ${SMARTOPS_IDENTITY_SERVICE_URL:http://localhost:8086}
+              predicates:
+                - Path=/api/v1/auth/**
+            # CUSTOMER - writes without circuit breaker
+            - id: customer-service-write
+              uri: ${SMARTOPS_CUSTOMER_SERVICE_URL:http://localhost:8081}
+              predicates:
+                - Path=/api/v1/customers/**, /api/v1/sites/**, /api/v1/contacts/**
+                - Method=GET,POST,PUT,PATCH,DELETE
+
+            # CUSTOMER - reads with circuit breaker
+            - id: customer-service-read
+              uri: ${SMARTOPS_CUSTOMER_SERVICE_URL:http://localhost:8081}
+              predicates:
+                - Path=/internal/v1/customers/**
+                - Method=GET
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: customerServiceCircuitBreaker
+                    fallbackUri: forward:/fallback/customers
+
+            # ASSET - writes without circuit breaker
+            - id: asset-service-write
+              uri: ${SMARTOPS_ASSET_SERVICE_URL:http://localhost:8082}
+              predicates:
+                - Path=/api/v1/assets/**,/api/v1/asset-types/**
+                - Method=POST,PUT,PATCH,DELETE
+
+            # ASSET - reads with circuit breaker
+            - id: asset-service-read
+              uri: ${SMARTOPS_ASSET_SERVICE_URL:http://localhost:8082}
+              predicates:
+                - Path=/api/v1/assets/**,/api/v1/asset-types/**,/internal/v1/assets/**
+                - Method=GET
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: assetServiceCircuitBreaker
+                    fallbackUri: forward:/fallback/assets
+
+            # WORKORDER - writes without circuit breaker
+            - id: workorder-service-write
+              uri: ${SMARTOPS_WORKORDER_SERVICE_URL:http://localhost:8083}
+              predicates:
+                - Path=/api/v1/work-orders/**
+                - Method=POST,PUT,PATCH,DELETE
+
+            # WORKORDER - reads with circuit breaker
+            - id: workorder-service-read
+              uri: ${SMARTOPS_WORKORDER_SERVICE_URL:http://localhost:8083}
+              predicates:
+                - Path=/api/v1/work-orders/**,/internal/v1/work-orders/**
+                - Method=GET
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: workorderServiceCircuitBreaker
+                    fallbackUri: forward:/fallback/workorders
+
+            # BILLING - writes without circuit breaker
+            - id: billing-service-write
+              uri: ${SMARTOPS_BILLING_SERVICE_URL:http://localhost:8084}
+              predicates:
+                - Path=/api/v1/invoices/**,/internal/v1/invoices/**
+                - Method=POST,PUT,PATCH,DELETE
+
+            # BILLING - reads with circuit breaker
+            - id: billing-service-read
+              uri: ${SMARTOPS_BILLING_SERVICE_URL:http://localhost:8084}
+              predicates:
+                - Path=/api/v1/invoices/**,/internal/v1/invoices/**
+                - Method=GET
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: billingServiceCircuitBreaker
+                    fallbackUri: forward:/fallback/billing
+
+            # NOTIFICATION - writes without circuit breaker
+            - id: notification-service-write
+              uri: ${SMARTOPS_NOTIFICATION_SERVICE_URL:http://localhost:8085}
+              predicates:
+                - Path=/api/v1/notifications/**
+                - Method=POST,PUT,PATCH,DELETE
+
+            # NOTIFICATION - reads with circuit breaker
+            - id: notification-service-read
+              uri: ${SMARTOPS_NOTIFICATION_SERVICE_URL:http://localhost:8085}
+              predicates:
+                - Path=/api/v1/notifications/**
+                - Method=GET
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: notificationServiceCircuitBreaker
+                    fallbackUri: forward:/fallback/notifications
+
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway,circuitbreakers,circuitbreakerevents
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      customerServiceCircuitBreaker:
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+
+      assetServiceCircuitBreaker:
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+
+      workorderServiceCircuitBreaker:
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+
+      billingServiceCircuitBreaker:
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+
+      notificationServiceCircuitBreaker:
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+
+  timelimiter:
+    instances:
+      customerServiceCircuitBreaker:
+        timeoutDuration: 5s
+      assetServiceCircuitBreaker:
+        timeoutDuration: 5s
+      workorderServiceCircuitBreaker:
+        timeoutDuration: 5s
+      billingServiceCircuitBreaker:
+        timeoutDuration: 5s
+      notificationServiceCircuitBreaker:
+        timeoutDuration: 5s
+
+smartops:
+  security:
+    jwt:
+      issuer: smartops-identity
+      secret: ${SMARTOPS_JWT_SECRET:local-dev-secret-change-me-local-dev-secret-change-me} # We should keep issuer & secret the same as identity-service, because the gateway should validate tokens signed by identiy-service.
+
+logging:
+  level:
+    root: INFO
+    org.springframework.cloud.gateway: INFO
+    io.github.resilience4j: INFO
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    urls:
+      - name: Identity Service
+        url: /v3/api-docs/identity
+      - name: Customer Service
+        url: /v3/api-docs/customers
+      - name: Asset Service
+        url: /v3/api-docs/assets
+      - name: WorkOrder Service
+        url: /v3/api-docs/workorders
+      - name: Billing Service
+        url: /v3/api-docs/billing
+      - name: Notification Service
+        url: /v3/api-docs/notifications

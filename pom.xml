@@ -29,15 +29,14 @@
 	</scm>
 	<modules>
 		<module>smartops-shared</module>
-		<module>smartops-bootstrap</module>
-		<module>smartops-identity</module>
-		<module>smartops-customer</module>
-		<module>smartops-asset</module>
-		<module>smartops-workorder</module>
-		<module>smartops-billing</module>
-		<module>smartops-notification</module>
-		<module>smartops-audit</module>
-		<module>smartops-app</module>
+		<module>smartops-identity-app</module>
+		<module>smartops-customer-app</module>
+		<module>smartops-asset-app</module>
+		<module>smartops-workorder-app</module>
+		<module>smartops-billing-app</module>
+		<module>smartops-notification-app</module>
+		<module>smartops-gateway-app</module>
+
 	</modules>
 	<properties>
 		<java.version>21</java.version>
