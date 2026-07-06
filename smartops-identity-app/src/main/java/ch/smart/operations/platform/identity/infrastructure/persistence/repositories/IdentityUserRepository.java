@@ -11,6 +11,8 @@ public interface IdentityUserRepository extends JpaRepository<IdentityUserJpaEnt
 
     Optional<IdentityUserJpaEntity> findByUsername(String username);
 
+    Optional<IdentityUserJpaEntity> findByEmail(String email);
+
     boolean existsByUsername(String username);
 
     boolean existsByEmail(String email);

@@ -1,6 +1,8 @@
 package ch.smart.operations.platform.identity.api.controllers;
 import jakarta.validation.Valid;
 
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -30,5 +32,22 @@ public class AuthController {
     public ResponseEntity<UserResponse> createUser(@Valid @RequestBody CreateUserRequest request) {
         UserResponse response = identityApplicationService.createUser(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @GetMapping("/users")
+    public ResponseEntity<List<UserResponse>> searchUsers(
+        @RequestParam(required = false) String username,
+        @RequestParam(required = false) String email
+    ){
+        List<UserResponse> users = identityApplicationService.searchUsers(username, email);
+        return ResponseEntity.ok(users);
+    }
+
+    @GetMapping("/users/username/{username}")
+    public ResponseEntity<UserResponse> getUserByUsername(
+        @PathVariable String username
+    ){
+        UserResponse user = identityApplicationService.getUserByUsername(username);
+        return ResponseEntity.ok(user);
     }
 }

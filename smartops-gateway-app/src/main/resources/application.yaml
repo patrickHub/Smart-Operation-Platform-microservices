@@ -20,9 +20,14 @@ spring:
                   - DELETE
                   - OPTIONS
                 allowedHeaders:
-                  - "*"
+                  - Authorization
+                  - Content-Type
+                  - Accept
+                  - Origin
+                  - X-Requested-With
                 exposedHeaders:
-                  - "Location"
+                  - Location
+                  - Authorization
                 allowCredentials: true
           routes:
             # route identity OpenAPI spec through the gateway

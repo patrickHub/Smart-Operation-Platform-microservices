@@ -4,13 +4,16 @@ package ch.smart.operations.platform.identity.application.services;
 import java.time.OffsetDateTime;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import ch.smart.operations.platform.identity.api.contracts.CreateUserRequest;
@@ -21,6 +24,7 @@ import ch.smart.operations.platform.identity.domain.enums.IdentityUserStatus;
 import ch.smart.operations.platform.identity.domain.enums.UserRole;
 import ch.smart.operations.platform.identity.infrastructure.persistence.entities.IdentityUserJpaEntity;
 import ch.smart.operations.platform.identity.infrastructure.persistence.repositories.IdentityUserRepository;
+import ch.smart.operations.platform.shared.exceptions.NotFoundException;
 import ch.smart.operations.platform.shared.exceptions.ValidationException;
 
 @Service
@@ -40,6 +44,7 @@ public class IdentityApplicationService {
         this.jwtTokenService = jwtTokenService;
     }
 
+    @Transactional(readOnly = true)
     public LoginResponseDto login(LoginRequest request) {
         IdentityUserJpaEntity user = userRepository.findByUsername(request.username())
                 .orElseThrow(() -> invalidCredentials());
@@ -101,6 +106,30 @@ public class IdentityApplicationService {
 
         return toUserResponse(savedUser);
     }
+
+    @Transactional(readOnly = true)
+    public List<UserResponse> searchUsers(String username, String email){
+        List<IdentityUserJpaEntity> users;
+        if(username != null){
+            users = userRepository.findByUsername(username).stream().toList();
+        }else if (email != null){
+            users = userRepository.findByEmail(email).stream().toList();
+        }
+        else{
+            users = userRepository.findAll();
+        }
+
+        return users.stream().map(this::toUserResponse).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public UserResponse getUserByUsername(String username){
+        IdentityUserJpaEntity user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new NotFoundException("User could not be found by username: " + username));
+        
+        return toUserResponse(user);
+    }
+
 
     private Set<UserRole> parseRoles(Set<String> roleValues, Map<String, String[]> errors) {
         Set<UserRole> roles = new LinkedHashSet<>();

@@ -41,7 +41,7 @@ public class GatewaySecurityConfig {
     ) {
     return http
             .csrf(ServerHttpSecurity.CsrfSpec::disable)
-            .cors(Customizer.withDefaults())
+            //.cors(Customizer.withDefaults())
             .exceptionHandling(exceptionHandling -> exceptionHandling
                     .authenticationEntryPoint(authenticationEntryPoint)
                     .accessDeniedHandler(accessDeniedHandler)
@@ -62,8 +62,15 @@ public class GatewaySecurityConfig {
                     // Public identity endpoints
                     .pathMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
 
-                    // For now, user creation is ADMIN only
+                    // For now, user creation and view all users is ADMIN only
                     .pathMatchers(HttpMethod.POST, "/api/v1/auth/users")
+                    .hasRole("ADMIN")
+
+                    // For now any authenticated user can get it user details data
+                    .pathMatchers(HttpMethod.GET, "/api/v1/auth/users/username/**")
+                    .hasAnyRole("ADMIN", "SUPPORT_AGENT", "DISPATCHER", "TECHNICIAN", "BILLING_MANAGER")
+
+                    .pathMatchers(HttpMethod.GET, "/api/v1/auth/users")
                     .hasRole("ADMIN")
 
                     // Public actuator endpoints
