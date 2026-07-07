@@ -33,11 +33,20 @@ public class IdentityUserJpaEntity {
     @Column(name = "password_hash", nullable = false, length = 255)
     private String passwordHash;
 
+    @Column(name = "first_name", nullable = false, length = 100)
+    private String firstName;
+
+    @Column(name = "last_name", nullable = false, length = 100)
+    private String lastName;
+
     @Column(name = "display_name", nullable = false, length = 255)
     private String displayName;
 
     @Column(name = "email", nullable = false, unique = true, length = 255)
     private String email;
+
+    @Column(name = "job_function", nullable = false, length = 150)
+    private String function;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 50)
@@ -70,8 +79,11 @@ public class IdentityUserJpaEntity {
             UUID id,
             String username,
             String passwordHash,
+            String firstName,
+            String lastName,
             String displayName,
             String email,
+            String function,
             IdentityUserStatus status,
             Set<UserRole> roles,
             OffsetDateTime createdAt,
@@ -80,6 +92,9 @@ public class IdentityUserJpaEntity {
         this.id = id;
         this.username = username;
         this.passwordHash = passwordHash;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.function = function;
         this.displayName = displayName;
         this.email = email;
         this.status = status;
@@ -98,6 +113,18 @@ public class IdentityUserJpaEntity {
 
     public String getPasswordHash() {
         return passwordHash;
+    }
+
+    public String getFirstName() {
+    return firstName;
+    }
+
+    public String getLastName() {
+        return lastName;
+    }
+
+    public String getFunction() {
+        return function;
     }
 
     public String getDisplayName() {
