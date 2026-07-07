@@ -94,8 +94,11 @@ public class IdentityApplicationService {
                 UUID.randomUUID(),
                 request.username(),
                 passwordEncoder.encode(request.password()),
+                request.firstName(),
+                request.lastName(),
                 request.displayName(),
                 request.email(),
+                request.function(),
                 IdentityUserStatus.ACTIVE,
                 roles,
                 now,
@@ -151,8 +154,11 @@ public class IdentityApplicationService {
         return new UserResponse(
                 user.getId(),
                 user.getUsername(),
+                user.getFirstName(),
+                user.getLastName(),
                 user.getDisplayName(),
                 user.getEmail(),
+                user.getFunction(),
                 user.getStatus().name(),
                 user.getRoles()
                         .stream()
