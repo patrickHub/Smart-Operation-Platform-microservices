@@ -3,15 +3,15 @@ services:
     image: postgres:15
     container_name: smartops-postgres
     environment:
-      POSTGRES_DB: smartops
-      POSTGRES_USER: smartops
-      POSTGRES_PASSWORD: smartops
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT}:5432"
     volumes:
       - smartops-postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U smartops -d smartops"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -35,7 +35,7 @@ services:
     depends_on:
       - zookeeper
     ports:
-      - "9092:9092"
+      - "${KAFKA_PORT}:9092"
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: smartops-zookeeper:2181
@@ -68,11 +68,12 @@ services:
       postgres:
         condition: service_healthy
     environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
       SERVER_PORT: 8081
       
-      SPRING_DATASOURCE_URL: jdbc:postgresql://smartops-postgres:5432/smartops
-      SPRING_DATASOURCE_USERNAME: smartops
-      SPRING_DATASOURCE_PASSWORD: smartops
+      SPRING_DATASOURCE_URL: jdbc:postgresql://smartops-postgres:${POSTGRES_PORT}/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
 
       SPRING_FLYWAY_ENABLED: "true"
       SPRING_FLYWAY_LOCATIONS: classpath:db/migration
@@ -86,10 +87,10 @@ services:
       SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: "true"
       SPRING_JPA_SHOW_SQL: "true"
 
-      SMARTOPS_SECURITY_JWT_SECRET: local-dev-secret-change-me-local-dev-secret-change-me
-      SMARTOPS_SECURITY_JWT_ISSUER: smartops-identity
+      SMARTOPS_SECURITY_JWT_SECRET: ${SMARTOPS_SECURITY_JWT_SECRET}
+      SMARTOPS_SECURITY_JWT_ISSUER: ${SMARTOPS_SECURITY_JWT_ISSUER}
     ports:
-      - "8081:8081"
+      - "${CUSTOMER_SERVICE_PORT}:8081"
     networks:
       - smartops-network
 
@@ -106,11 +107,12 @@ services:
       customer-service:
         condition: service_started
     environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
       SERVER_PORT: 8082
 
-      SPRING_DATASOURCE_URL: jdbc:postgresql://smartops-postgres:5432/smartops
-      SPRING_DATASOURCE_USERNAME: smartops
-      SPRING_DATASOURCE_PASSWORD: smartops
+      SPRING_DATASOURCE_URL: jdbc:postgresql://smartops-postgres:${POSTGRES_PORT}/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
 
       SPRING_FLYWAY_ENABLED: "true"
       SPRING_FLYWAY_SCHEMAS: asset
@@ -124,14 +126,14 @@ services:
       SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: "true"
       SPRING_JPA_SHOW_SQL: "true"
 
-      SMARTOPS_SECURITY_JWT_SECRET: local-dev-secret-change-me-local-dev-secret-change-me
-      SMARTOPS_SECURITY_JWT_ISSUER: smartops-identity
+      SMARTOPS_SECURITY_JWT_SECRET: ${SMARTOPS_SECURITY_JWT_SECRET}
+      SMARTOPS_SECURITY_JWT_ISSUER: ${SMARTOPS_SECURITY_JWT_ISSUER}
       SMARTOPS_SECURITY_INTERNAL_SERVICE_NAME: asset-service
-      SMARTOPS_SECURITY_INTERNAL_TOKEN_VALIDITY_SECONDS: 300
-      
-      SMARTOPS_SERVICES_CUSTOMER_BASE_URL: http://customer-service:8081
+      SMARTOPS_SECURITY_INTERNAL_TOKEN_VALIDITY_SECONDS: ${SMARTOPS_SECURITY_INTERNAL_TOKEN_VALIDITY_SECONDS}
+
+      SMARTOPS_SERVICES_CUSTOMER_BASE_URL: http://customer-service:${CUSTOMER_SERVICE_PORT}
     ports:
-      - "8082:8082"
+      - "${ASSET_SERVICE_PORT}:8082"
     networks:
       - smartops-network
 
@@ -150,11 +152,12 @@ services:
       asset-service:
         condition: service_started
     environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
       SERVER_PORT: 8083
 
-      SPRING_DATASOURCE_URL: jdbc:postgresql://smartops-postgres:5432/smartops
-      SPRING_DATASOURCE_USERNAME: smartops
-      SPRING_DATASOURCE_PASSWORD: smartops
+      SPRING_DATASOURCE_URL: jdbc:postgresql://smartops-postgres:${POSTGRES_PORT}/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
 
       SPRING_FLYWAY_ENABLED: "true"
       SPRING_FLYWAY_SCHEMAS: workorder
@@ -168,19 +171,19 @@ services:
       SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: "true"
       SPRING_JPA_SHOW_SQL: "true"
 
-      SMARTOPS_SECURITY_JWT_SECRET: local-dev-secret-change-me-local-dev-secret-change-me
-      SMARTOPS_SECURITY_JWT_ISSUER: smartops-identity
+      SMARTOPS_SECURITY_JWT_SECRET: ${SMARTOPS_SECURITY_JWT_SECRET}
+      SMARTOPS_SECURITY_JWT_ISSUER: ${SMARTOPS_SECURITY_JWT_ISSUER}
       SMARTOPS_SECURITY_INTERNAL_SERVICE_NAME: workorder-service
-      SMARTOPS_SECURITY_INTERNAL_TOKEN_VALIDITY_SECONDS: 300
+      SMARTOPS_SECURITY_INTERNAL_TOKEN_VALIDITY_SECONDS: ${SMARTOPS_SECURITY_INTERNAL_TOKEN_VALIDITY_SECONDS}
 
       SPRING_KAFKA_BOOTSTRAP_SERVERS: smartops-kafka:29092
-      SMARTOPS_SERVICES_ASSET_BASE_URL: http://asset-service:8082
+      SMARTOPS_SERVICES_ASSET_BASE_URL: http://asset-service:${ASSET_SERVICE_PORT}
       SMARTOPS_OUTBOX_ENABLED: "true"
       SMARTOPS_OUTBOX_POLLING_RATE_MS: 5000
       SMARTOPS_OUTBOX_MAX_ATTEMPTS: 5
       SMARTOPS_KAFKA_TOPICS_WORKORDER_EVENTS: smartops.workorder.events
     ports:
-      - "8083:8083"
+      - "${WORKORDER_SERVICE_PORT}:8083"
     networks:
       - smartops-network
 
@@ -199,11 +202,12 @@ services:
       workorder-service:
         condition: service_started
     environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
       SERVER_PORT: 8084
 
-      SPRING_DATASOURCE_URL: jdbc:postgresql://smartops-postgres:5432/smartops
-      SPRING_DATASOURCE_USERNAME: smartops
-      SPRING_DATASOURCE_PASSWORD: smartops
+      SPRING_DATASOURCE_URL: jdbc:postgresql://smartops-postgres:${POSTGRES_PORT}/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
 
       SPRING_FLYWAY_ENABLED: "true"
       SPRING_FLYWAY_SCHEMAS: billing
@@ -217,19 +221,19 @@ services:
       SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: "true"
       SPRING_JPA_SHOW_SQL: "true"
 
-      SMARTOPS_SECURITY_JWT_SECRET: local-dev-secret-change-me-local-dev-secret-change-me
-      SMARTOPS_SECURITY_JWT_ISSUER: smartops-identity
+      SMARTOPS_SECURITY_JWT_SECRET: ${SMARTOPS_SECURITY_JWT_SECRET}
+      SMARTOPS_SECURITY_JWT_ISSUER: ${SMARTOPS_SECURITY_JWT_ISSUER}
       SMARTOPS_SECURITY_INTERNAL_SERVICE_NAME: billing-service
-      SMARTOPS_SECURITY_INTERNAL_TOKEN_VALIDITY_SECONDS: 300
+      SMARTOPS_SECURITY_INTERNAL_TOKEN_VALIDITY_SECONDS: ${SMARTOPS_SECURITY_INTERNAL_TOKEN_VALIDITY_SECONDS}
 
       SPRING_KAFKA_BOOTSTRAP_SERVERS: smartops-kafka:29092
-      SMARTOPS_SERVICES_WORKORDER_BASE_URL: http://workorder-service:8083
+      SMARTOPS_SERVICES_WORKORDER_BASE_URL: http://workorder-service:${WORKORDER_SERVICE_PORT}
       SMARTOPS_OUTBOX_ENABLED: "true"
       SMARTOPS_OUTBOX_POLLING_RATE_MS: 5000
       SMARTOPS_OUTBOX_MAX_ATTEMPTS: 5
       SMARTOPS_KAFKA_TOPICS_BILLING_EVENTS: smartops.billing.events
     ports:
-      - "8084:8084"
+      - "${BILLING_SERVICE_PORT}:8084"
     networks:
       - smartops-network
 
@@ -246,11 +250,12 @@ services:
       kafka:
         condition: service_healthy
     environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
       SERVER_PORT: 8085
 
-      SPRING_DATASOURCE_URL: jdbc:postgresql://smartops-postgres:5432/smartops
-      SPRING_DATASOURCE_USERNAME: smartops
-      SPRING_DATASOURCE_PASSWORD: smartops
+      SPRING_DATASOURCE_URL: jdbc:postgresql://smartops-postgres:${POSTGRES_PORT}/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
 
       SPRING_FLYWAY_ENABLED: "true"
       SPRING_FLYWAY_SCHEMAS: notification
@@ -264,8 +269,8 @@ services:
       SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: "true"
       SPRING_JPA_SHOW_SQL: "true"
 
-      SMARTOPS_SECURITY_JWT_SECRET: local-dev-secret-change-me-local-dev-secret-change-me
-      SMARTOPS_SECURITY_JWT_ISSUER: smartops-identity
+      SMARTOPS_SECURITY_JWT_SECRET: ${SMARTOPS_SECURITY_JWT_SECRET}
+      SMARTOPS_SECURITY_JWT_ISSUER: ${SMARTOPS_SECURITY_JWT_ISSUER}
 
       SPRING_KAFKA_BOOTSTRAP_SERVERS: smartops-kafka:29092
       SPRING_KAFKA_CONSUMER_GROUP_ID: smartops-notification-service
@@ -275,7 +280,7 @@ services:
       SMARTOPS_KAFKA_TOPICS_WORKORDER_EVENTS: smartops.workorder.events
       SMARTOPS_KAFKA_TOPICS_BILLING_EVENTS: smartops.billing.events
     ports:
-      - "8085:8085"
+      - "${NOTIFICATION_SERVICE_PORT}:8085"
     networks:
       - smartops-network
   identity-service:
@@ -289,11 +294,12 @@ services:
       postgres:
         condition: service_healthy
     environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
       SERVER_PORT: 8086
 
-      SPRING_DATASOURCE_URL: jdbc:postgresql://smartops-postgres:5432/smartops
-      SPRING_DATASOURCE_USERNAME: smartops
-      SPRING_DATASOURCE_PASSWORD: smartops
+      SPRING_DATASOURCE_URL: jdbc:postgresql://smartops-postgres:${POSTGRES_PORT}/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
 
       SPRING_FLYWAY_ENABLED: "true"
       SPRING_FLYWAY_LOCATIONS: classpath:db/migration
@@ -307,11 +313,11 @@ services:
       SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: "true"
       SPRING_JPA_SHOW_SQL: "true"
 
-      SMARTOPS_SECURITY_JWT_ISSUER: smartops-identity
-      SMARTOPS_SECURITY_JWT_SECRET: local-dev-secret-change-me-local-dev-secret-change-me
-      SMARTOPS_SECURITY_JWT_ACCESS_TOKEN_VALIDITY_SECONDS: 3600
+      SMARTOPS_SECURITY_JWT_ISSUER: ${SMARTOPS_SECURITY_JWT_ISSUER}
+      SMARTOPS_SECURITY_JWT_SECRET: ${SMARTOPS_SECURITY_JWT_SECRET}
+      SMARTOPS_SECURITY_JWT_ACCESS_TOKEN_VALIDITY_SECONDS: ${SMARTOPS_SECURITY_JWT_ACCESS_TOKEN_VALIDITY_SECONDS}
     ports:
-      - "8086:8086"
+      - "${IDENTITY_SERVICE_PORT}:8086"
     networks:
       - smartops-network
   gateway-service:
@@ -335,18 +341,23 @@ services:
       notification-service:
         condition: service_started
     environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
       SERVER_PORT: 8080
 
-      SMARTOPS_IDENTITY_SERVICE_URL: http://identity-service:8086
-      SMARTOPS_CUSTOMER_SERVICE_URL: http://customer-service:8081
-      SMARTOPS_ASSET_SERVICE_URL: http://asset-service:8082
-      SMARTOPS_WORKORDER_SERVICE_URL: http://workorder-service:8083
-      SMARTOPS_BILLING_SERVICE_URL: http://billing-service:8084
-      SMARTOPS_NOTIFICATION_SERVICE_URL: http://notification-service:8085
-      SMARTOPS_SECURITY_JWT_SECRET: local-dev-secret-change-me-local-dev-secret-change-me # We should keep issuer & secret the same as identity-service, because the gateway should validate tokens signed by identiy-service.
-      SMARTOPS_SECURITY_JWT_ISSUER: smartops-identity
+      SMARTOPS_IDENTITY_SERVICE_URL: http://identity-service:${IDENTITY_SERVICE_PORT}
+      SMARTOPS_CUSTOMER_SERVICE_URL: http://customer-service:${CUSTOMER_SERVICE_PORT}
+      SMARTOPS_ASSET_SERVICE_URL: http://asset-service:${ASSET_SERVICE_PORT}
+      SMARTOPS_WORKORDER_SERVICE_URL: http://workorder-service:${WORKORDER_SERVICE_PORT}
+      SMARTOPS_BILLING_SERVICE_URL: http://billing-service:${BILLING_SERVICE_PORT}
+      SMARTOPS_NOTIFICATION_SERVICE_URL: http://notification-service:${NOTIFICATION_SERVICE_PORT}
+      
+      SMARTOPS_SECURITY_JWT_SECRET: ${SMARTOPS_SECURITY_JWT_SECRET} # We should keep issuer & secret the same as identity-service, because the gateway should validate tokens signed by identiy-service.
+      SMARTOPS_SECURITY_JWT_ISSUER: ${SMARTOPS_SECURITY_JWT_ISSUER}
+
+      SMARTOPS_ALLOWED_ORIGIN: ${SMARTOPS_ALLOWED_ORIGIN}
+      SMARTOPS_CORS_ALLOWED_ORIGIN: ${SMARTOPS_ALLOWED_ORIGIN} # Spring will map it to smartops.cors.allowed-origin
     ports:
-      - "8080:8080"
+      - "${GATEWAY_SERVICE_PORT}:8080"
     networks:
       - smartops-network
 
