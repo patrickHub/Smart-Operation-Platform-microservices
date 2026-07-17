@@ -1,10 +1,6 @@
 spring:
   application:
     name: smartops-identity
-  datasource:
-    url: jdbc:postgresql://localhost:5432/smartops
-    username: smartops
-    password: smartops
 
   flyway:
     enabled: true
@@ -17,7 +13,7 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
-    show-sql: true
+    show-sql: false
     properties:
       hibernate:
         default_schema: identity
@@ -36,9 +32,9 @@ management:
 smartops:
   security:
     jwt:
-      issuer: smartops-identity
-      secret: ${SMARTOPS_JWT_SECRET:local-dev-secret-change-me-local-dev-secret-change-me}
-      access-token-validity-seconds: 3600
+      issuer: ${SMARTOPS_SECURITY_JWT_ISSUER:smartops-identity}
+      secret: ${SMARTOPS_SECURITY_JWT_SECRET:local-dev-secret-change-me-local-dev-secret-change-me}
+      access-token-validity-seconds: ${SMARTOPS_SECURITY_JWT_ACCESS_TOKEN_VALIDITY_SECONDS:3600}
 server:
   port: 8086
 logging:
