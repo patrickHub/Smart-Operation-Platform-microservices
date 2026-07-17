@@ -27,6 +27,17 @@ smartops:
     jwt:
       issuer: smartops-identity
       secret: ${SMARTOPS_JWT_SECRET:local-dev-secret-change-me-local-dev-secret-change-me}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,circuitbreakers,circuitbreakerevents
+  endpoint:
+    health:
+      probes:
+        enabled: true
+        
 logging:
   level:
     root: INFO

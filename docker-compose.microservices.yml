@@ -15,6 +15,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+      start_period: 20s
     networks:
       - smartops-network
 
@@ -50,10 +51,11 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
     healthcheck:
-      test: ["CMD-SHELL", "kafka-broker-api-versions --bootstrap-server smartops-kafka:29092 >/dev/null 2>&1"]
+      test: ["CMD-SHELL", "kafka-broker-api-versions --bootstrap-server smartops-kafka:9092 >/dev/null 2>&1"]
       interval: 10s
       timeout: 10s
       retries: 10
+      start_period: 30s
     networks:
       - smartops-network
 
@@ -89,6 +91,12 @@ services:
 
       SMARTOPS_SECURITY_JWT_SECRET: ${SMARTOPS_SECURITY_JWT_SECRET}
       SMARTOPS_SECURITY_JWT_ISSUER: ${SMARTOPS_SECURITY_JWT_ISSUER}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8081/actuator/health | grep -q 'UP'"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
     ports:
       - "${CUSTOMER_SERVICE_PORT}:8081"
     networks:
@@ -105,7 +113,7 @@ services:
       postgres:
         condition: service_healthy
       customer-service:
-        condition: service_started
+        condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
       SERVER_PORT: 8082
@@ -132,6 +140,12 @@ services:
       SMARTOPS_SECURITY_INTERNAL_TOKEN_VALIDITY_SECONDS: ${SMARTOPS_SECURITY_INTERNAL_TOKEN_VALIDITY_SECONDS}
 
       SMARTOPS_SERVICES_CUSTOMER_BASE_URL: http://customer-service:${CUSTOMER_SERVICE_PORT}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8082/actuator/health | grep -q 'UP'"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
     ports:
       - "${ASSET_SERVICE_PORT}:8082"
     networks:
@@ -150,7 +164,7 @@ services:
       kafka:
         condition: service_healthy
       asset-service:
-        condition: service_started
+        condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
       SERVER_PORT: 8083
@@ -182,6 +196,12 @@ services:
       SMARTOPS_OUTBOX_POLLING_RATE_MS: 5000
       SMARTOPS_OUTBOX_MAX_ATTEMPTS: 5
       SMARTOPS_KAFKA_TOPICS_WORKORDER_EVENTS: smartops.workorder.events
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8083/actuator/health | grep -q 'UP'"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
     ports:
       - "${WORKORDER_SERVICE_PORT}:8083"
     networks:
@@ -200,7 +220,7 @@ services:
       kafka:
         condition: service_healthy
       workorder-service:
-        condition: service_started
+        condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
       SERVER_PORT: 8084
@@ -232,6 +252,12 @@ services:
       SMARTOPS_OUTBOX_POLLING_RATE_MS: 5000
       SMARTOPS_OUTBOX_MAX_ATTEMPTS: 5
       SMARTOPS_KAFKA_TOPICS_BILLING_EVENTS: smartops.billing.events
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8084/actuator/health | grep -q 'UP'"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
     ports:
       - "${BILLING_SERVICE_PORT}:8084"
     networks:
@@ -279,6 +305,12 @@ services:
       SMARTOPS_KAFKA_CONSUMER_NOTIFICATION_GROUP: smartops-notification-service
       SMARTOPS_KAFKA_TOPICS_WORKORDER_EVENTS: smartops.workorder.events
       SMARTOPS_KAFKA_TOPICS_BILLING_EVENTS: smartops.billing.events
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8085/actuator/health | grep -q 'UP'"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
     ports:
       - "${NOTIFICATION_SERVICE_PORT}:8085"
     networks:
@@ -316,6 +348,12 @@ services:
       SMARTOPS_SECURITY_JWT_ISSUER: ${SMARTOPS_SECURITY_JWT_ISSUER}
       SMARTOPS_SECURITY_JWT_SECRET: ${SMARTOPS_SECURITY_JWT_SECRET}
       SMARTOPS_SECURITY_JWT_ACCESS_TOKEN_VALIDITY_SECONDS: ${SMARTOPS_SECURITY_JWT_ACCESS_TOKEN_VALIDITY_SECONDS}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8086/actuator/health | grep -q 'UP'"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
     ports:
       - "${IDENTITY_SERVICE_PORT}:8086"
     networks:
@@ -329,17 +367,17 @@ services:
     container_name: smartops-gateway-service
     depends_on:
       identity-service:
-        condition: service_started
+        condition: service_healthy
       customer-service:
-        condition: service_started
+        condition: service_healthy
       asset-service:
-        condition: service_started
+        condition: service_healthy
       workorder-service:
-        condition: service_started
+        condition: service_healthy
       billing-service:
-        condition: service_started
+        condition: service_healthy
       notification-service:
-        condition: service_started
+        condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
       SERVER_PORT: 8080
@@ -356,6 +394,12 @@ services:
 
       SMARTOPS_ALLOWED_ORIGIN: ${SMARTOPS_ALLOWED_ORIGIN}
       SMARTOPS_CORS_ALLOWED_ORIGIN: ${SMARTOPS_ALLOWED_ORIGIN} # Spring will map it to smartops.cors.allowed-origin
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/actuator/health | grep -q 'UP'"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
     ports:
       - "${GATEWAY_SERVICE_PORT}:8080"
     networks:

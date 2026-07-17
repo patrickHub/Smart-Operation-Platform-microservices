@@ -53,8 +53,13 @@ logging:
   level:
     root: INFO
     org.hibernate.SQL: warn
+    
 management:
   endpoints:
     web:
       exposure:
         include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
