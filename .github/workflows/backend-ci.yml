@@ -51,11 +51,11 @@ jobs:
     steps:
       # Download the repository source code into the runner
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       # Install Java 21 on the runner and enable Maven dependency cache
       - name: Set up Java 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           # Use Eclipse Temurin JDK distribution
           distribution: temurin
@@ -95,12 +95,12 @@ jobs:
     steps:
       # Download the repository source code into the runner
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       # Create a .env file for CI from the safe example file
       # docker compose automatically reads .env from the project root
       - name: Create CI .env file
-        run: cp .env.example .env
+        run: cp .env .env
 
       # Validate the final merged Docker Compose configuration
       # docker-compose.yml includes docker-compose.infra.yml and docker-compose.services.yml
@@ -153,12 +153,12 @@ jobs:
     steps:
       # Download the repository source code into the runner
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       # Install Java 21 and enable Maven dependency cache
       # This is needed because Dockerfile.microservices copies built JAR files from target/
       - name: Set up Java 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v
         with:
           # Use Eclipse Temurin JDK distribution
           distribution: temurin
