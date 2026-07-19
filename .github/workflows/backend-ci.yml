@@ -1,0 +1,367 @@
+# Name displayed in the GitHub Actions tab
+name: Backend CI
+
+# Defines when this workflow should run
+on:
+  # Run the workflow when code is pushed
+  push:
+    # Only run for these branches/patterns
+    branches:
+      # Run when pushing to main branch
+      - main
+
+      # Run when pushing to develop branch
+      - develop
+
+      # Run when pushing to any feature branch, for example feature/add-ci
+      - "feature/**"
+
+      # Run when pushing to any fix branch, for example fix/docker-healthcheck
+      - "fix/**"
+
+      # Run when pushing to any chore branch, for example chore/devops-cleanup
+      - "chore/**"
+
+  # Run the workflow when a pull request is opened or updated
+  pull_request:
+    # Only run pull request checks targeting these branches
+    branches:
+      # Run CI when a pull request targets main
+      - main
+
+      # Run CI when a pull request targets develop
+      - develop
+
+# Defines the permissions given to the GitHub token during this workflow
+permissions:
+  # The workflow only needs read access to repository contents and write access to packages for Docker image builds
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAMESPACE: ${{ github.repository }}
+
+# All jobs executed by this workflow
+jobs:
+  # First job: compile and test the backend with Maven
+  backend-build:
+    # Display name shown in GitHub Actions UI
+    name: Build and Test Backend
+
+    # Use the latest Ubuntu GitHub-hosted runner
+    runs-on: ubuntu-latest
+
+    # Steps are executed in order inside this job
+    steps:
+      # Download the repository source code into the runner
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      # Install Java 21 on the runner and enable Maven dependency cache
+      - name: Set up Java 21
+        uses: actions/setup-java@v5
+        with:
+          # Use Eclipse Temurin JDK distribution
+          distribution: temurin
+
+          # SmartOps backend uses Java 21
+          java-version: 21
+
+          # Cache Maven dependencies to make future builds faster
+          cache: maven
+
+      # Print Java and Maven versions to help debugging CI issues
+      - name: Show Java and Maven versions
+        run: |
+          java -version
+          mvn -version
+
+      # Validate the Maven project structure and configuration
+      - name: Validate Maven project
+        run: mvn validate
+
+      # Build all modules and run tests
+      - name: Build and test backend
+        run: mvn clean verify
+
+  # Second job: validate Docker Compose configuration
+  compose-validate:
+    # Display name shown in GitHub Actions UI
+    name: Validate Docker Compose
+
+    # Use the latest Ubuntu GitHub-hosted runner
+    runs-on: ubuntu-latest
+
+    # This job starts only after backend-build succeeds
+    needs: backend-build
+
+    # Steps are executed in order inside this job
+    steps:
+      # Download the repository source code into the runner
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      # Create a .env file for CI from the safe example file
+      # docker compose automatically reads .env from the project root
+      #- name: Create CI .env file
+      #  run: cp .env .env
+
+      # Validate the final merged Docker Compose configuration
+      # docker-compose.yml includes docker-compose.infra.yml and docker-compose.services.yml
+      - name: Validate Docker Compose config
+        run: docker compose config
+
+  # Third job: build Docker images for all backend services
+  docker-build:
+    # Display name shown in GitHub Actions UI
+    name: Build Docker Images
+
+    # Use the latest Ubuntu GitHub-hosted runner
+    runs-on: ubuntu-latest
+
+    # This job starts only after backend-build and compose-validate succeed
+    needs:
+      - backend-build
+      - compose-validate
+
+    # Matrix allows the same Docker build steps to run for multiple services
+    strategy:
+      # If one service image fails, continue testing the other service images
+      fail-fast: false
+
+      # List of backend service modules to build as Docker images
+      matrix:
+        service:
+          # API Gateway service
+          - smartops-gateway-app
+
+          # Identity and authentication service
+          - smartops-identity-app
+
+          # Customer management service
+          - smartops-customer-app
+
+          # Asset management service
+          - smartops-asset-app
+
+          # Work order management service
+          - smartops-workorder-app
+
+          # Billing and invoice service
+          - smartops-billing-app
+
+          # Notification service
+          - smartops-notification-app
+
+    # Steps are executed in order for each matrix service
+    steps:
+      # Download the repository source code into the runner
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      # Install Java 21 and enable Maven dependency cache
+      # This is needed because Dockerfile.microservices copies built JAR files from target/
+      - name: Set up Java 21
+        uses: actions/setup-java@v5
+        with:
+          # Use Eclipse Temurin JDK distribution
+          distribution: temurin
+
+          # SmartOps backend uses Java 21
+          java-version: 21
+
+          # Cache Maven dependencies to speed up Docker build job
+          cache: maven
+
+      # Build all backend JAR files before Docker image build
+      # Tests already ran in backend-build, so we skip them here to save time
+      - name: Build backend JARs
+        run: mvn clean package -DskipTests
+
+      # Enable Docker Buildx, the modern Docker builder used in CI
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Build the Docker image for the current service from the matrix
+      - name: Build ${{ matrix.service }} Docker image
+        uses: docker/build-push-action@v6
+        with:
+          # Use repository root as Docker build context
+          context: .
+
+          # Use your shared Dockerfile for all microservices
+          file: ./Dockerfile.microservices
+
+          # Pass the current service module name to the Dockerfile
+          build-args: |
+            MODULE=${{ matrix.service }}
+
+          # Do not push images yet; only validate that they can be built
+          push: false
+
+          # Local CI image tag
+          tags: smartops/${{ matrix.service }}:ci
+  compose-smoke-test:
+    # Display name in GitHub Actions UI
+    name: Docker Compose Smoke Test
+
+    # Use Ubuntu runner
+    runs-on: ubuntu-latest
+
+    # This job starts only after Docker images build successfully
+    needs:
+      - docker-build
+
+    steps:
+      # Checkout repository source code
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      # Install Java 21 because we need to build JAR files before docker compose build
+      - name: Set up Java 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+
+      # Create CI .env file from the safe template
+      #- name: Create CI .env file
+      #  run: cp .env.example .env
+
+      # Build backend JARs used by Dockerfile.microservices
+      - name: Build backend JARs
+        run: mvn clean package -DskipTests
+
+      # Build all Docker Compose services
+      - name: Build Docker Compose services
+        run: docker compose build
+
+      # Start the full platform in detached mode
+      - name: Start SmartOps platform
+        run: docker compose up -d
+
+      # Show container status after startup
+      - name: Show running containers
+        run: docker compose ps
+
+      # Wait until gateway health endpoint is available
+      - name: Wait for Gateway health
+        run: |
+          echo "Waiting for SmartOps Gateway to become healthy..."
+
+          for i in {1..30}; do
+            if curl -fsS http://localhost:8080/actuator/health | grep -q "UP"; then
+              echo "Gateway is healthy"
+              exit 0
+            fi
+
+            echo "Gateway not ready yet. Attempt $i/30"
+            docker compose ps
+            sleep 10
+          done
+
+          echo "Gateway did not become healthy in time"
+          docker compose logs gateway-service
+          exit 1
+
+      # Test login through the gateway
+      - name: Smoke test login endpoint
+        run: |
+          echo "Testing login endpoint..."
+
+          RESPONSE=$(curl -fsS -X POST http://localhost:8080/api/v1/auth/login \
+            -H "Content-Type: application/json" \
+            -d '{"username":"admin","password":"admin123"}')
+
+          echo "$RESPONSE" | grep -q "accessToken"
+
+          echo "Login smoke test passed"
+
+      # Always show logs if the job fails
+      - name: Show Docker Compose logs on failure
+        if: failure()
+        run: docker compose logs
+
+      # Always stop containers at the end
+      - name: Stop SmartOps platform
+        if: always()
+        run: docker compose down --volumes --remove-orphans
+  publish-docker-images:
+    # Display name shown in GitHub Actions UI
+    name: Publish Docker Images to GHCR
+
+    # Use Ubuntu runner
+    runs-on: ubuntu-latest
+
+    # Publish only after the full CI and smoke test succeeds
+    needs:
+      - compose-smoke-test
+
+    # Push images only from main or develop branch, not from pull requests
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - smartops-gateway-app
+          - smartops-identity-app
+          - smartops-customer-app
+          - smartops-asset-app
+          - smartops-workorder-app
+          - smartops-billing-app
+          - smartops-notification-app
+
+    steps:
+      # Download repository source code
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      # Install Java 21 because Dockerfile.microservices copies JARs from target/
+      - name: Set up Java 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+
+      # Build backend JARs before Docker image publishing
+      - name: Build backend JARs
+        run: mvn clean package -DskipTests
+
+      # Enable Docker Buildx
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Login to GitHub Container Registry
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Generate Docker image tags and labels
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/${{ matrix.service }}
+          tags: |
+            type=ref,event=branch
+            type=sha,prefix=sha-
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+
+      # Build and push Docker image to GHCR
+      - name: Build and push ${{ matrix.service }} image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile.microservices
+          build-args: |
+            MODULE=${{ matrix.service }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}

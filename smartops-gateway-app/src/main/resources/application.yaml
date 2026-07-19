@@ -11,7 +11,7 @@ spring:
             cors-configurations:
               '[/**]':
                 allowedOrigins:
-                  - "http://localhost:4200"
+                  - ${SMARTOPS_CORS_ALLOWED_ORIGIN:http://localhost:4200}
                 allowedMethods:
                   - GET
                   - POST
@@ -181,7 +181,11 @@ management:
     web:
       exposure:
         include: health,info,gateway,circuitbreakers,circuitbreakerevents
-
+  endpoint:
+    health:
+      probes:
+        enabled: true
+        
 resilience4j:
   circuitbreaker:
     instances:
@@ -236,8 +240,8 @@ resilience4j:
 smartops:
   security:
     jwt:
-      issuer: smartops-identity
-      secret: ${SMARTOPS_JWT_SECRET:local-dev-secret-change-me-local-dev-secret-change-me} # We should keep issuer & secret the same as identity-service, because the gateway should validate tokens signed by identiy-service.
+      issuer: ${SMARTOPS_SECURITY_JWT_ISSUER:smartops-identity}
+      secret: ${SMARTOPS_SECURITY_JWT_SECRET:local-dev-secret-change-me-local-dev-secret-change-me}
 
 logging:
   level:

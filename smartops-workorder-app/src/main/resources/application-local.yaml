@@ -1,0 +1,7 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/smartops
+    username: smartops
+    password: smartops
+  jpa:
+    show-sql: true
