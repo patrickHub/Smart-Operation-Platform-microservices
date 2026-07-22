@@ -120,24 +120,155 @@ Use these terms consistently across code and documentation:
 - **Notification**: message triggered by a business event
 - **Audit Event**: immutable historical business record
 
+
+## Local DevOps Scripts
+
+The backend provides PowerShell scripts under `scripts/` to simplify local development and demos.
+
+### Build backend
+
+```powershell
+.\scripts\build-backend.ps1
+.\scripts\build-backend.ps1 -SkipTests
+```
+
+### Start platform locally
+```powershell
+.\scripts\start-platform.ps1
+.\scripts\start-platform.ps1 -Build
+```
+
+### Start platform from published GHCR images
+```powershell
+.\scripts\start-platform.ps1 -Deploy
+```
+
+### Stop platform
+```powershell
+.\scripts\stop-platform.ps1
+.\scripts\stop-platform.ps1 -Volumes
+```
+
+### Rebuild one service
+```powershell
+.\scripts\rebuild-service.ps1 customer-service
+.\scripts\rebuild-service.ps1 gateway-service -SkipBackendBuild
+```
+
+### View logs
+```powershell
+.\scripts\logs.ps1 gateway-service
+.\scripts\logs.ps1 customer-service -Follow
+```
+
+### Check status
+```powershell
+.\scripts\status.ps1
+```
+
+## Test everything
+
+Run:
+```powershell
+.\scripts\build-backend.ps1 -SkipTests
+```
+
+Then:
+```powershell
+.\scripts\start-platform.ps1 -Build
+```
+
+Check:
+```powershell
+.\scripts\status.ps1
+```
+
+Logs:
+```powershell
+.\scripts\logs.ps1 gateway-service
+```
+
+Stop:
+```powershell
+.\scripts\stop-platform.ps1
+```
+
 ## Status of the project
+
+The SmartOps backend has progressed from a documentation-first prototype into a working microservices-based backend platform.
 
 This repository currently contains:
 
-- multi-module Maven structure
-- documentation-first design
+- multi-module Maven structure using Java 21 and Spring Boot
 - microservice-ready module boundaries
+- separated backend services for Identity, Customer, Asset, WorkOrder, Billing, Notification and Gateway
+- PostgreSQL persistence with schema-per-service organization
+- Flyway database migrations for all services
+- Kafka-based event handling for work order, billing and notification flows
+- API Gateway as a single backend entry point
+- JWT authentication and role-based authorization
+- service-to-service security preparation with internal tokens
+- Resilience4j circuit breakers and time limiters for downstream service calls
+- centralized Docker Compose environment configuration using `.env` and `.env.example`
+- split Docker Compose structure for infrastructure, local services and deployment images
+- Docker health checks for PostgreSQL, Kafka and all Spring Boot services
+- GitHub Actions backend CI pipeline
+- Docker Compose smoke test in CI
+- GitHub Container Registry image publishing for `main` and `develop`
+- deployment-ready Docker Compose configuration using published GHCR images
+- PowerShell task runner scripts for local Windows development
 
-The next major step after documentation is implementation of the first vertical slice:
+The first complete backend vertical slice has been implemented and tested:
 
 1. customer creation
 2. site creation
 3. asset registration
 4. work order creation
 5. technician assignment
-6. work order completion
-7. invoice generation
-8. audit and notification event handling
+6. work order acceptance and start
+7. work order completion
+8. invoice generation
+9. notification event handling
+10. secured API access through the gateway
+11. Docker Compose platform startup
+12. CI smoke testing through gateway health and login endpoint
+
+Current backend services:
+
+| Service | Module | Port | Responsibility |
+|---|---|---:|---|
+| Gateway | `smartops-gateway-app` | `8080` | Single API entry point, routing, CORS, JWT validation, role-based access |
+| Identity | `smartops-identity-app` | `8086` | Authentication, JWT generation, user profile and role management |
+| Customer | `smartops-customer-app` | `8081` | Customers, customer sites and customer contacts |
+| Asset | `smartops-asset-app` | `8082` | Asset registration, asset status and asset history |
+| WorkOrder | `smartops-workorder-app` | `8083` | Work order lifecycle, tasks, assignments and intervention reports |
+| Billing | `smartops-billing-app` | `8084` | Invoice generation, invoice lifecycle and pricing policies |
+| Notification | `smartops-notification-app` | `8085` | Notification creation, retry handling and delivery attempts |
+
+DevOps status:
+
+| Area | Status |
+|---|---|
+| Local Docker Compose platform | Implemented |
+| Split Compose files | Implemented |
+| Docker health checks | Implemented |
+| Spring profiles | Implemented |
+| GitHub Actions Maven build | Implemented |
+| Docker Compose validation in CI | Implemented |
+| Docker image build in CI | Implemented |
+| Docker Compose smoke test in CI | Implemented |
+| GHCR image publishing | Implemented for `main` and `develop` |
+| Deployment Compose using registry images | Implemented |
+| PowerShell task runner scripts | Implemented |
+
+The next backend steps are focused on production-readiness and observability:
+
+1. improve structured logging and correlation IDs across all services
+2. add centralized observability with Prometheus and Grafana
+3. add distributed tracing with OpenTelemetry
+4. add more integration tests for business workflows
+5. add release tagging and semantic Docker image versioning
+6. prepare cloud deployment documentation
 
 
 ## 👤 Author
