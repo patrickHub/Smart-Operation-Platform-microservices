@@ -1,0 +1,230 @@
+services:
+  identity-service:
+    image: ${REGISTRY}/${IMAGE_NAMESPACE}/smartops-identity-app:${IMAGE_TAG}
+    container_name: smartops-identity-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SERVER_PORT: 8086
+
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+
+      SMARTOPS_SECURITY_JWT_ISSUER: ${SMARTOPS_SECURITY_JWT_ISSUER}
+      SMARTOPS_SECURITY_JWT_SECRET: ${SMARTOPS_SECURITY_JWT_SECRET}
+      SMARTOPS_SECURITY_JWT_ACCESS_TOKEN_VALIDITY_SECONDS: ${SMARTOPS_SECURITY_JWT_ACCESS_TOKEN_VALIDITY_SECONDS}
+    ports:
+      - "${IDENTITY_SERVICE_PORT}:8086"
+    networks:
+      - smartops-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8086/actuator/health | grep -q 'UP'"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+
+  customer-service:
+    image: ${REGISTRY}/${IMAGE_NAMESPACE}/smartops-customer-app:${IMAGE_TAG}
+    container_name: smartops-customer-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SERVER_PORT: 8081
+
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+
+      SMARTOPS_SECURITY_JWT_ISSUER: ${SMARTOPS_SECURITY_JWT_ISSUER}
+      SMARTOPS_SECURITY_JWT_SECRET: ${SMARTOPS_SECURITY_JWT_SECRET}
+    ports:
+      - "${CUSTOMER_SERVICE_PORT}:8081"
+    networks:
+      - smartops-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8081/actuator/health | grep -q 'UP'"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+
+  asset-service:
+    image: ${REGISTRY}/${IMAGE_NAMESPACE}/smartops-asset-app:${IMAGE_TAG}
+    container_name: smartops-asset-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      customer-service:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SERVER_PORT: 8082
+
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+
+      SMARTOPS_CUSTOMER_SERVICE_URL: http://customer-service:8081
+
+      SMARTOPS_SECURITY_JWT_ISSUER: ${SMARTOPS_SECURITY_JWT_ISSUER}
+      SMARTOPS_SECURITY_JWT_SECRET: ${SMARTOPS_SECURITY_JWT_SECRET}
+      SMARTOPS_SECURITY_INTERNAL_SERVICE_NAME: asset-service
+      SMARTOPS_SECURITY_INTERNAL_TOKEN_VALIDITY_SECONDS: ${SMARTOPS_SECURITY_INTERNAL_TOKEN_VALIDITY_SECONDS}
+    ports:
+      - "${ASSET_SERVICE_PORT}:8082"
+    networks:
+      - smartops-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8082/actuator/health | grep -q 'UP'"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+
+  workorder-service:
+    image: ${REGISTRY}/${IMAGE_NAMESPACE}/smartops-workorder-app:${IMAGE_TAG}
+    container_name: smartops-workorder-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      asset-service:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SERVER_PORT: 8083
+
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+
+      SMARTOPS_ASSET_SERVICE_URL: http://asset-service:8082
+
+      SMARTOPS_SECURITY_JWT_ISSUER: ${SMARTOPS_SECURITY_JWT_ISSUER}
+      SMARTOPS_SECURITY_JWT_SECRET: ${SMARTOPS_SECURITY_JWT_SECRET}
+      SMARTOPS_SECURITY_INTERNAL_SERVICE_NAME: workorder-service
+      SMARTOPS_SECURITY_INTERNAL_TOKEN_VALIDITY_SECONDS: ${SMARTOPS_SECURITY_INTERNAL_TOKEN_VALIDITY_SECONDS}
+    ports:
+      - "${WORKORDER_SERVICE_PORT}:8083"
+    networks:
+      - smartops-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8083/actuator/health | grep -q 'UP'"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+
+  billing-service:
+    image: ${REGISTRY}/${IMAGE_NAMESPACE}/smartops-billing-app:${IMAGE_TAG}
+    container_name: smartops-billing-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      workorder-service:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SERVER_PORT: 8084
+
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+
+      SMARTOPS_WORKORDER_SERVICE_URL: http://workorder-service:8083
+
+      SMARTOPS_SECURITY_JWT_ISSUER: ${SMARTOPS_SECURITY_JWT_ISSUER}
+      SMARTOPS_SECURITY_JWT_SECRET: ${SMARTOPS_SECURITY_JWT_SECRET}
+      SMARTOPS_SECURITY_INTERNAL_SERVICE_NAME: billing-service
+      SMARTOPS_SECURITY_INTERNAL_TOKEN_VALIDITY_SECONDS: ${SMARTOPS_SECURITY_INTERNAL_TOKEN_VALIDITY_SECONDS}
+    ports:
+      - "${BILLING_SERVICE_PORT}:8084"
+    networks:
+      - smartops-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8084/actuator/health | grep -q 'UP'"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+
+  notification-service:
+    image: ${REGISTRY}/${IMAGE_NAMESPACE}/smartops-notification-app:${IMAGE_TAG}
+    container_name: smartops-notification-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SERVER_PORT: 8085
+
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+
+      SMARTOPS_SECURITY_JWT_ISSUER: ${SMARTOPS_SECURITY_JWT_ISSUER}
+      SMARTOPS_SECURITY_JWT_SECRET: ${SMARTOPS_SECURITY_JWT_SECRET}
+    ports:
+      - "${NOTIFICATION_SERVICE_PORT}:8085"
+    networks:
+      - smartops-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8085/actuator/health | grep -q 'UP'"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+
+  gateway-service:
+    image: ${REGISTRY}/${IMAGE_NAMESPACE}/smartops-gateway-app:${IMAGE_TAG}
+    container_name: smartops-gateway-service
+    depends_on:
+      identity-service:
+        condition: service_healthy
+      customer-service:
+        condition: service_healthy
+      asset-service:
+        condition: service_healthy
+      workorder-service:
+        condition: service_healthy
+      billing-service:
+        condition: service_healthy
+      notification-service:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SERVER_PORT: 8080
+
+      SMARTOPS_IDENTITY_SERVICE_URL: http://identity-service:8086
+      SMARTOPS_CUSTOMER_SERVICE_URL: http://customer-service:8081
+      SMARTOPS_ASSET_SERVICE_URL: http://asset-service:8082
+      SMARTOPS_WORKORDER_SERVICE_URL: http://workorder-service:8083
+      SMARTOPS_BILLING_SERVICE_URL: http://billing-service:8084
+      SMARTOPS_NOTIFICATION_SERVICE_URL: http://notification-service:8085
+
+      SMARTOPS_SECURITY_JWT_ISSUER: ${SMARTOPS_SECURITY_JWT_ISSUER}
+      SMARTOPS_SECURITY_JWT_SECRET: ${SMARTOPS_SECURITY_JWT_SECRET}
+      SMARTOPS_CORS_ALLOWED_ORIGIN: ${SMARTOPS_ALLOWED_ORIGIN}
+    ports:
+      - "${GATEWAY_SERVICE_PORT}:8080"
+    networks:
+      - smartops-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/actuator/health | grep -q 'UP'"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+
+networks:
+  smartops-network:
+    external: false
